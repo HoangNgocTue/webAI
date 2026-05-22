@@ -1,0 +1,152 @@
+<style>
+    .invoice-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 30px;
+    background: linear-gradient(135deg, #f9f9f9, #ffffff);
+    border-radius: 10px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    border-top: 6px solid #63adb2;
+}
+
+h2 {
+    color: #63adb2;
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+}
+
+h2::after {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 3px;
+    background-color: #63adb2;
+    margin: 10px auto 0;
+    border-radius: 2px;
+}
+
+p {
+    color: #333;
+    font-size: 1rem;
+    margin: 10px 0;
+}
+
+span.customer,
+span.address,
+span.price,
+span.quantity,
+span.date,
+.total span {
+    font-weight: bold;
+    color: #6dd5cc;
+}
+
+.product-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.product-item {
+    background-color: #fff;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.total {
+    font-size: 1.2rem;
+    text-align: right;
+    margin-top: 30px;
+    border-top: 2px solid #ddd;
+    padding-top: 15px;
+}
+
+.total span {
+    font-size: 1.6rem;
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+button {
+    display: block;
+    margin: 20px auto 0;
+    padding: 10px 20px;
+    background-color: #54d1cf;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    text-align: center;
+}
+
+button:hover {
+    background-color: #6ba1cd;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+button a {
+    color: #fff;
+    text-decoration: none;
+}
+
+button a:hover {
+    text-decoration: underline;
+}
+
+</style>
+
+<div class="invoice-container">
+    <br/>
+  <a><h2> HÓA ĐƠN</h2> </a>
+  <hr/>
+    {% comment %} <h2>Đơn hàng #{{ invoice.id }}</h2> {% endcomment %}
+    <p>Khách hàng: 
+        <span class="customer">
+            {% if invoice.customer %}
+                {{ invoice.customer.username }}
+            {% else %}
+                Khách
+            {% endif %}
+        </span>
+    </p>
+    
+    
+
+    <p>Sản phẩm:</p>
+    <ul class="product-list">
+        {% for item in invoice.order.orderitem_set.all %}
+            <li>
+                <div class="product-item">
+                    <strong>{{ item.product.name }}</strong><br>
+                    Giá: <span class="price">{{ item.product.price  }} VND</span><br>
+                    Số lượng: <span class="quantity">{{ item.quantity }}</span>
+                </div>
+            </li>
+        {% empty %}
+            <li>Không có sản phẩm.</li>
+        {% endfor %}
+    </ul>
+
+    <p>Ngày tạo: <span class="date"><p> {{ invoice.invoice_date|date:"d/m/Y H:i" }}</p>
+    </span></p>
+    <p class="total">Tổng tiền: <span>{{ invoice.total_amount }} VND</span></p>
+    <button><div class="d-flex align-items-center">  <span class="ml-1" ><a style="text-decoration: none;" href="{% url 'order_history' %}">Quay lại </a></span> </div> </button>
+
+</div>

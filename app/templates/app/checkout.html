@@ -1,0 +1,88 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block content_checkout %}
+{% comment %} <!-- Hiển thị thông báo -->
+{% if messages %}
+<div class="alert alert-success" role="alert">
+    {% for message in messages %}
+        {{ message }}
+    {% endfor %} {% endcomment %}
+{% comment %} </div>
+{% endif %} {% endcomment %}
+<div class="row">
+    <br/>
+  <a><h2> HOÀN TẤT ĐƠN HÀNG</h2> </a>
+  <hr/>
+    <!-- Phần nhập thông tin -->
+    <div class="col-lg-6">
+        <div class="box-element" id="form-wrapper">
+            <form id="form" method="POST">
+                {% csrf_token %} <!-- Bổ sung token CSRF -->
+                
+                <div id="user-info">
+                    <div class="form-field">
+                        <input required class="form-control" style="width: 250px;" type="text" name="name" placeholder="Họ và tên..">
+                    </div>
+                </div>
+
+                <div id="shipping-info">
+                    <hr>
+                    <p>Thông tin giao hàng:</p>
+                    <hr>
+                    <div class="form-group" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="form-field" style="flex: 1;">
+                            <input class="form-control" style="width: 100%;" type="text" name="address" placeholder="Địa chỉ..">
+                        </div>
+                        <div class="form-field" style="flex: 1;">
+                            <input class="form-control" style="width: 100%;" type="text" name="city" placeholder="Thành phố..">
+                        </div>
+                    </div>
+                    <div class="form-field" style="margin-top: 10px;">
+                        <input class="form-control" style="width: 200px;" type="text" name="zipcode" placeholder="Số điện thoại..">
+                    </div>
+                    
+                </div>
+
+                <hr>
+                <input id="form-button" class="btn btn-success btn-sm" type="submit" style="background-color: rgb(95, 158, 116);width: 130px;" value="Đặt hàng">
+            </form>
+        </div>
+    </div>
+
+    <!-- Phần tóm tắt đơn hàng -->
+    <div class="col-lg-6">
+        <div class="box-element">
+            <a class="btn btn-outline-dark"style="background: #fdfcfd; border: 2px solid #0a0a0a; color:#0b0c0c; width: 250px;" href="{% url 'cart' %}">&#x2190; Quay về giỏ hàng</a>
+            <hr>
+            <h3>Thanh Toán</h3>
+            <hr>
+            <table class="table  ">
+                <thead>
+                    <tr>
+                        <th>Hình ảnh</th>
+                        <th>Sản phẩm</th>
+                        <th>Giá</th>
+                        <th>Số lượng</th>
+                    </tr>
+                </thead>
+                {% for item in order.orderitem_set.all %}
+                <tbody>
+                    <tr>
+                        <td>
+                            <img class="row-image" src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}" style="width: 100px; height: auto;">
+                        </td>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.product.price|floatformat:3 }} VND</td>
+                        <td>{{ item.quantity }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table >
+            <div class="justify-content-end">
+                <h5>Sản phẩm: {{ order.get_cart_items }}</h5>
+                <h5>Tổng số tiền: {{ order.get_cart_total|floatformat:3 }} VND</h5></div>
+            </div>
+            
+        </div>
+    </div>
+    {% endblock content_checkout %}

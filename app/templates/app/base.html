@@ -1,0 +1,356 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHOP TORANO</title>
+    
+    <script type="text/javascript">
+        var csrftoken = "{{ csrf_token }}";
+        var user = "{{ user.username }}" || "AnonymousUser";
+    </script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <link rel="stylesheet" type="text/css" href="{% static 'app/css/style.css' %}">
+    <link href="{% static 'app/css/main.css' %}" rel="stylesheet">
+    <link href="{% static 'app/css/all.min.css' %}" rel="stylesheet">
+    <link href="{% static 'app/css/owl.carousel.min.css' %}" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        /* Fix Navbar at the top */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 999; /* Z-index thấp hơn chatbot */
+        }
+        main {
+            margin-top: 100px;
+        }
+
+        /* --- CSS CHO CHATBOT --- */
+        :root {
+            --chatbot-primary: #4eaeb9;
+            --chatbot-light: #ffffff;
+            --chatbot-dark: #050505;
+        }
+
+        /* Nút kích hoạt chatbot */
+        .chat-launcher {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--chatbot-primary);
+            color: var(--chatbot-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: transform 0.2s ease;
+        }
+        .chat-launcher:hover {
+            transform: scale(1.1);
+        }
+        .chat-launcher svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--chatbot-light);
+        }
+
+        /* Khung chứa Chatbot */
+        .chat-widget-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 400px;
+            height: 600px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            display: flex; /* Dùng flex để dễ căn chỉnh */
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1001;
+            /* Hiệu ứng xuất hiện */
+            opacity: 0;
+            transform: translateY(20px);
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Lớp 'show' để hiện chatbot */
+        .chat-widget-container.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+        }
+
+        /* Header của chatbot */
+        .chat-header {
+            background-color: var(--chatbot-primary);
+            color: var(--chatbot-light);
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header .close-btn {
+            background: none;
+            border: none;
+            color: var(--chatbot-light);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        /* Vùng tin nhắn */
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #f5f5f5;
+        }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; }
+        .message.user { background-color: var(--chatbot-primary); color: var(--chatbot-light); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.bot { background-color: #e4e6eb; color: var(--chatbot-dark); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .message.bot p { margin: 0; }
+        .message.bot ul, .message.bot ol { margin: 5px 0 0 20px; padding: 0; }
+        
+        .typing-indicator { align-self: flex-start; }
+        .typing-indicator span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #aaa; margin: 0 2px; animation: bounce 1.2s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+        /* Vùng nhập liệu */
+        .chat-input { display: flex; padding: 15px; border-top: 1px solid #ddd; }
+        #message-input { flex-grow: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; font-size: 1rem; outline: none; }
+        #send-button { background: none; border: none; cursor: pointer; padding: 0 10px; }
+        #send-button svg { width: 24px; height: 24px; fill: var(--chatbot-primary); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div style="background: #4eaeb9; height: 70px; border-radius: 20px;" class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img src="{% static 'app/images/Logo_dhktdn.png' %}" width="50" height="50" alt="Logo">
+                Đà Nẵng Store 🚀
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'home' %}">Trang chủ</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Sản phẩm
+                        </a>
+                        <ul class="dropdown-menu">
+                        {% for category in categories %}
+                            <li><a class="dropdown-item" href="{% url 'category' %}?category={{category.slug}}">{{category.name}}</a></li>
+                        {% endfor %}
+                        </ul>
+                    </li>
+                </ul>
+                <form class="d-flex" role="search" method="POST" action="{% url 'search' %}">
+                    {% csrf_token %}
+                    <input class="form-control me-2" type="search" placeholder="Tìm kiếm" aria-label="Search" name="searched" style="border-radius: 35px;">
+                    <button class="btn btn-outline-success" style="border-radius: 35px;background: #4eaeb9; width: 90px; border: 1px solid #66b090; color:#66b090;" type="submit">Search</button>
+                </form>
+            </div>
+            <div class="cart-container my-2 my-lg-0" style="visibility: {{user_login}}">
+                <span>Tài Khoản: {{request.user}}</span>
+                {% if request.user.is_staff %}<a href="{% url 'admin_dashboard' %}" style="color:black; text-decoration: none; margin-left: 15px; padding: 8px 15px; background: #fff; border-radius: 8px; font-weight: bold;">📊 Dashboard</a>{% endif %}
+                <span><a href="{% url 'logout' %}" style="color:black; text-decoration: none;">Đăng xuất</a></span>
+            </div>
+            <div class="cart-container my-2 my-lg-0" style="visibility: {{user_not_login}}">
+                <a class="nav-link" href="{% url 'login' %}">Đăng nhập</a>
+                <a class="nav-link" href="{% url 'register' %}">Đăng ký</a>
+            </div>
+            <div class="cart-container my-2 my-lg-0">
+                <a href="{% url 'cart' %}">
+                    <div class="cart-icon">
+                        <span class="cart-count" style="color:black; text-decoration: none;"></span>
+                        <img id="cart-icon" src="{% static 'images/cart.png' %}" width="40" height="40">
+                    </div>
+                </a>
+            </div>
+            <div>
+                <div class="nav-item list-unstyled" style="margin-left:20px; border: 1px solid #7bc7af;">
+                    <a class="nav-link d-flex align-items-center" href="{% url 'order_history' %}">
+                        Lịch Sử Giao dịch
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main style="background:#4eaeb9; padding: 20px;" class="container mt-4">
+        {% block banner_slider %}{% endblock %}
+        {% block main-content %}
+        {% endblock %}
+        {% block cart_content %}{% endblock %}
+        {% block content_checkout %}{% endblock %}
+        {% block register %}{% endblock register %}
+        {% if user_login == "show" %}
+        {% endif %}
+    </main>
+
+    <footer class="container--fluid text-center p-2 mt-5 footer" style="background-color:#4eaeb9; color: black;">
+        <p>Đà Nẵng Store - Cửa Hàng Công Nghệ Uy Tín</p>
+    </footer>
+
+    <div class="chat-launcher" id="chat-launcher">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
+    </div>
+
+    <div class="chat-widget-container" id="chat-widget">
+        <div class="chat-header">
+            <span>Đà Nẵng Store Assistant 🤖</span>
+            <button class="close-btn" id="close-chat">×</button>
+        </div>
+        <div class="chat-messages" id="chatbox">
+            <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn...">
+            <button id="send-button">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script src="{% static 'app/js/all.min.js' %}"></script>
+    <script src="{% static 'app/js/myscript.js' %}"></script>
+    <script src="{% static 'app/js/s3.js' %}"></script>
+    <script src="{% static 'app/js/cart.js' %}"></script>
+    
+    <script type="text/javascript">
+        // Lấy cookie CSRF (giữ nguyên)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // --- LOGIC CHO CHATBOT ---
+        const chatLauncher = document.getElementById('chat-launcher');
+        const chatWidget = document.getElementById('chat-widget');
+        const closeChatBtn = document.getElementById('close-chat');
+        const chatbox = document.getElementById('chatbox');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Mở/đóng chatbot
+        chatLauncher.addEventListener('click', () => chatWidget.classList.toggle('show'));
+        closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
+
+        // Gửi tin nhắn
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function scrollToBottom() {
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const userMessage = messageInput.value.trim();
+            if (!userMessage) return;
+
+            appendMessage(userMessage, 'user');
+            messageInput.value = '';
+            showTypingIndicator();
+
+            try {
+                // SỬ DỤNG URL ĐÚNG CỦA BẠN
+                const response = await fetch('/chatbot/api/', { // <-- THAY ĐỔI URL TẠI ĐÂY NẾU CẦN
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken') // Gửi CSRF token
+                    },
+                    body: `message=${encodeURIComponent(userMessage)}`
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                appendMessage(data.reply, 'bot');
+            } catch (error) {
+                console.error('Lỗi khi gửi tin nhắn:', error);
+                appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
+            } finally {
+                hideTypingIndicator();
+            }
+        }
+
+        function appendMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            if (type === 'bot') {
+                messageElement.innerHTML = marked.parse(message);
+            } else {
+                messageElement.textContent = message;
+            }
+            chatbox.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'typing-indicator';
+            indicator.classList.add('message', 'typing-indicator');
+            indicator.innerHTML = `<span></span><span></span><span></span>`;
+            chatbox.appendChild(indicator);
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                chatbox.removeChild(indicator);
+            }
+        }
+    </script>
+</body>
+</html>

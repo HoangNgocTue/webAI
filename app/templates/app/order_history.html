@@ -1,0 +1,196 @@
+<style>
+/* Container chính */
+.order-history-container {
+    max-width: 1200px;
+}
+
+/* Card chứa bảng */
+.order-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.order-card:hover {
+    box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+}
+
+/* Tiêu đề chính */
+.order-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #333;
+    text-align: center;
+    margin-bottom: 25px;
+    letter-spacing: 0.5px;
+}
+
+/* Bảng */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #80def0, #63c8d8);
+    color: white;
+    padding: 14px;
+    font-size: 1rem;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom: none;
+}
+
+.table tbody tr {
+    background: #fdfdfd;
+    transition: 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: #f0fbff;
+    transform: scale(1.01);
+}
+
+.table td {
+    padding: 14px;
+    font-size: 0.95rem;
+    color: #333;
+    border-bottom: 1px solid #eaeaea;
+}
+
+/* Badge trạng thái */
+.badge-status {
+    padding: 8px 15px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.badge-approved {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+/* Nút xem hóa đơn */
+.btn-view {
+    background: #63c8d8;
+    color: white;
+    padding: 8px 18px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.25s ease;
+}
+
+.btn-view:hover {
+    background: #36b3c5;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+/* Nút quay lại */
+.btn-back {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 10px 18px;
+    color: #444;
+    background: #e3f7ff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.25s ease;
+}
+
+.btn-back:hover {
+    background: #c8efff;
+    color: #000;
+    transform: translateY(-2px);
+}
+
+</style>
+
+<div class="order-history-container container my-5">
+
+    <div class="order-card">
+
+        <h1 class="order-title">Lịch Sử Đơn Hàng</h1>
+
+        {% if orders %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã Đơn</th>
+                        <th>Ngày Đặt</th>
+                        <th>Tổng Tiền</th>
+                        <th>Trạng Thái</th>
+                        <th>Ngày Duyệt</th>
+                        <th>Hóa Đơn</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td><strong>#{{ order.id }}</strong></td>
+                        <td>{{ order.date_order|date:"d-m-Y H:i" }}</td>
+
+                        <td class="text-success fw-bold">
+                            {{ order.get_cart_total }} VND
+                        </td>
+
+                        <td>
+                            <span class="badge-status 
+                                {% if order.status == 'approved' %}
+                                    badge-approved
+                                {% else %}
+                                    badge-pending
+                                {% endif %}">
+                                {% if order.status == 'approved' %}Đã duyệt{% else %}Chưa duyệt{% endif %}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if order.approved_date %}
+                                {{ order.approved_date|date:"d-m-Y H:i" }}
+                            {% else %}
+                                <span class="text-muted">Chưa duyệt</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if order.invoice %}
+                                <a href="{% url 'invoice_detail' order.invoice.id %}" class="btn-view">
+                                    Xem hóa đơn
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Chưa có</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+        <a href="{% url 'home' %}" class="btn-back">
+            ⬅ Quay lại
+        </a>
+
+        {% else %}
+            <p class="text-center text-muted">Bạn chưa có đơn hàng nào.</p>
+        {% endif %}
+
+    </div>
+
+</div>
