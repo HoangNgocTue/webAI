@@ -18,3 +18,7 @@ media/
 
 # Static
 staticfiles/
+
+# Documentation & Reports
+baitap/
+db_info.txt

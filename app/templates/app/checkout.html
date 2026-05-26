@@ -1,88 +1,403 @@
 {% extends 'app/base.html' %}
 {% load static %}
+{% load currency %}
+
 {% block content_checkout %}
-{% comment %} <!-- Hiển thị thông báo -->
-{% if messages %}
-<div class="alert alert-success" role="alert">
-    {% for message in messages %}
-        {{ message }}
-    {% endfor %} {% endcomment %}
-{% comment %} </div>
-{% endif %} {% endcomment %}
-<div class="row">
-    <br/>
-  <a><h2> HOÀN TẤT ĐƠN HÀNG</h2> </a>
-  <hr/>
-    <!-- Phần nhập thông tin -->
-    <div class="col-lg-6">
-        <div class="box-element" id="form-wrapper">
-            <form id="form" method="POST">
-                {% csrf_token %} <!-- Bổ sung token CSRF -->
-                
-                <div id="user-info">
-                    <div class="form-field">
-                        <input required class="form-control" style="width: 250px;" type="text" name="name" placeholder="Họ và tên..">
+<style>
+    .checkout-page {
+        background: #f6f8fb;
+        border-radius: 24px;
+        padding: 24px;
+    }
+
+    .checkout-hero {
+        background: linear-gradient(135deg, #e60000, #4eaeb9);
+        color: #fff;
+        border-radius: 22px;
+        padding: 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+    }
+
+    .checkout-hero h1 {
+        font-weight: 900;
+        margin: 0 0 8px;
+        font-size: clamp(1.8rem, 3vw, 2.7rem);
+    }
+
+    .checkout-hero p {
+        margin: 0;
+        color: rgba(255,255,255,0.88);
+    }
+
+    .checkout-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 430px;
+        gap: 18px;
+        margin-top: 18px;
+        align-items: start;
+    }
+
+    .checkout-card,
+    .summary-card,
+    .checkout-footer-card {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 20px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+    }
+
+    .checkout-card {
+        padding: 22px;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 1.25rem;
+        font-weight: 900;
+        margin-bottom: 16px;
+    }
+
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .field {
+        display: grid;
+        gap: 7px;
+    }
+
+    .field.full {
+        grid-column: 1 / -1;
+    }
+
+    .field label {
+        color: #334155;
+        font-weight: 800;
+    }
+
+    .checkout-input {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 52px;
+        border: 1px solid #dbe5ef;
+        border-radius: 16px;
+        background: #fff;
+        padding: 0 14px;
+    }
+
+    .checkout-input:focus-within {
+        border-color: #e60000;
+        box-shadow: 0 0 0 4px rgba(230, 0, 0, 0.08);
+    }
+
+    .checkout-input input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+    }
+
+    .pay-method {
+        margin-top: 18px;
+        background: #f8fafc;
+        border: 1px solid #e8edf5;
+        border-radius: 18px;
+        padding: 16px;
+    }
+
+    .pay-method strong {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .pay-method p {
+        margin: 0;
+        color: #64748b;
+    }
+
+    .place-order-btn {
+        width: 100%;
+        height: 54px;
+        margin-top: 18px;
+        border: 0;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #e60000, #c90000);
+        color: #fff;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        box-shadow: 0 12px 24px rgba(230, 0, 0, 0.22);
+    }
+
+    .summary-card {
+        padding: 20px;
+        position: sticky;
+        top: 110px;
+    }
+
+    .back-cart {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #111827;
+        text-decoration: none;
+        font-weight: 800;
+        margin-bottom: 16px;
+    }
+
+    .summary-items {
+        display: grid;
+        gap: 12px;
+        margin: 14px 0;
+    }
+
+    .summary-item {
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        background: #f8fafc;
+        border-radius: 16px;
+    }
+
+    .summary-item img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 14px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+    }
+
+    .summary-item h3 {
+        font-size: 0.98rem;
+        font-weight: 900;
+        margin: 0 0 4px;
+    }
+
+    .summary-item p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .summary-price {
+        color: #e60000;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .summary-row,
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 0;
+        border-top: 1px solid #eef2f7;
+        color: #475569;
+        font-weight: 800;
+    }
+
+    .summary-total strong {
+        color: #e60000;
+        font-size: 1.4rem;
+    }
+
+    .checkout-footer-card {
+        margin-top: 18px;
+        padding: 18px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .checkout-footer-card div {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        color: #475569;
+    }
+
+    .checkout-footer-card strong {
+        display: block;
+        color: #111827;
+        margin-bottom: 3px;
+    }
+
+    @media (max-width: 992px) {
+        .checkout-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-card {
+            position: static;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .checkout-hero {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .checkout-grid,
+        .checkout-footer-card {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-item {
+            grid-template-columns: 56px minmax(0, 1fr);
+        }
+
+        .summary-price {
+            grid-column: 1 / -1;
+        }
+    }
+</style>
+
+<section class="checkout-page">
+    <div class="checkout-hero">
+        <div>
+            <h1>Hoàn tất đơn hàng</h1>
+            <p>Nhập thông tin giao hàng để Đà Nẵng Store xác nhận và xử lý đơn của bạn.</p>
+        </div>
+        <a class="history-btn light" href="{% url 'cart' %}">
+            <i data-lucide="arrow-left"></i>
+            Quay về giỏ hàng
+        </a>
+    </div>
+
+    <div class="checkout-layout">
+        <div class="checkout-card">
+            <h2 class="section-title"><i data-lucide="map-pin"></i> Thông tin nhận hàng</h2>
+
+            {% if messages %}
+            <div class="auth-alert">
+                {% for message in messages %}
+                <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="checkout-grid">
+                    <div class="field full">
+                        <label for="name">Họ và tên</label>
+                        <div class="checkout-input">
+                            <i data-lucide="user"></i>
+                            <input id="name" name="name" type="text" value="{{ request.user.get_full_name|default:request.user.username }}" required>
+                        </div>
+                    </div>
+
+                    <div class="field full">
+                        <label for="address">Địa chỉ cụ thể</label>
+                        <div class="checkout-input">
+                            <i data-lucide="home"></i>
+                            <input id="address" name="address" type="text" placeholder="Số nhà, tên đường, phường/xã" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="state">Quận/Huyện</label>
+                        <div class="checkout-input">
+                            <i data-lucide="map"></i>
+                            <input id="state" name="state" type="text" placeholder="Ví dụ: Hải Châu">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="city">Tỉnh/Thành phố</label>
+                        <div class="checkout-input">
+                            <i data-lucide="building-2"></i>
+                            <input id="city" name="city" type="text" value="Đà Nẵng" required>
+                        </div>
+                    </div>
+
+                    <div class="field full">
+                        <label for="mobile">Số điện thoại</label>
+                        <div class="checkout-input">
+                            <i data-lucide="phone"></i>
+                            <input id="mobile" name="mobile" type="tel" placeholder="Ví dụ: 0905123456" required>
+                        </div>
                     </div>
                 </div>
 
-                <div id="shipping-info">
-                    <hr>
-                    <p>Thông tin giao hàng:</p>
-                    <hr>
-                    <div class="form-group" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div class="form-field" style="flex: 1;">
-                            <input class="form-control" style="width: 100%;" type="text" name="address" placeholder="Địa chỉ..">
-                        </div>
-                        <div class="form-field" style="flex: 1;">
-                            <input class="form-control" style="width: 100%;" type="text" name="city" placeholder="Thành phố..">
-                        </div>
-                    </div>
-                    <div class="form-field" style="margin-top: 10px;">
-                        <input class="form-control" style="width: 200px;" type="text" name="zipcode" placeholder="Số điện thoại..">
-                    </div>
-                    
+                <div class="pay-method">
+                    <strong><i data-lucide="banknote"></i> Phương thức thanh toán</strong>
+                    <p>Thanh toán khi nhận hàng. Sau khi đặt hàng, admin sẽ phê duyệt và thông tin giao hàng sẽ xuất hiện trong mục Shipping address.</p>
                 </div>
 
-                <hr>
-                <input id="form-button" class="btn btn-success btn-sm" type="submit" style="background-color: rgb(95, 158, 116);width: 130px;" value="Đặt hàng">
+                <button class="place-order-btn" type="submit">
+                    <i data-lucide="check-circle-2"></i>
+                    Đặt hàng
+                </button>
             </form>
         </div>
+
+        <aside class="summary-card">
+            <a class="back-cart" href="{% url 'cart' %}">
+                <i data-lucide="shopping-cart"></i>
+                Kiểm tra lại giỏ hàng
+            </a>
+            <h2 class="section-title"><i data-lucide="receipt"></i> Tóm tắt thanh toán</h2>
+
+            <div class="summary-items">
+                {% for item in items %}
+                <div class="summary-item">
+                    <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}">
+                    <div>
+                        <h3>{{ item.product.name }}</h3>
+                        <p>Số lượng: {{ item.quantity }}</p>
+                    </div>
+                    <div class="summary-price">{{ item.get_total|vnd }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="summary-row">
+                <span>Sản phẩm</span>
+                <strong>{{ order.get_cart_items }}</strong>
+            </div>
+            <div class="summary-row">
+                <span>Phí vận chuyển</span>
+                <strong>{% if order.get_cart_total >= 1000000 %}Miễn phí{% else %}Tính khi giao{% endif %}</strong>
+            </div>
+            <div class="summary-total">
+                <span>Tổng thanh toán</span>
+                <strong>{{ order.get_cart_total|vnd }}</strong>
+            </div>
+        </aside>
     </div>
 
-    <!-- Phần tóm tắt đơn hàng -->
-    <div class="col-lg-6">
-        <div class="box-element">
-            <a class="btn btn-outline-dark"style="background: #fdfcfd; border: 2px solid #0a0a0a; color:#0b0c0c; width: 250px;" href="{% url 'cart' %}">&#x2190; Quay về giỏ hàng</a>
-            <hr>
-            <h3>Thanh Toán</h3>
-            <hr>
-            <table class="table  ">
-                <thead>
-                    <tr>
-                        <th>Hình ảnh</th>
-                        <th>Sản phẩm</th>
-                        <th>Giá</th>
-                        <th>Số lượng</th>
-                    </tr>
-                </thead>
-                {% for item in order.orderitem_set.all %}
-                <tbody>
-                    <tr>
-                        <td>
-                            <img class="row-image" src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}" style="width: 100px; height: auto;">
-                        </td>
-                        <td>{{ item.product.name }}</td>
-                        <td>{{ item.product.price|floatformat:3 }} VND</td>
-                        <td>{{ item.quantity }}</td>
-                    </tr>
-                </tbody>
-                {% endfor %}
-            </table >
-            <div class="justify-content-end">
-                <h5>Sản phẩm: {{ order.get_cart_items }}</h5>
-                <h5>Tổng số tiền: {{ order.get_cart_total|floatformat:3 }} VND</h5></div>
-            </div>
-            
+    <div class="checkout-footer-card">
+        <div>
+            <i data-lucide="shield-check"></i>
+            <p><strong>Bảo hành 12 tháng</strong>Áp dụng theo chính sách từng sản phẩm.</p>
+        </div>
+        <div>
+            <i data-lucide="rotate-ccw"></i>
+            <p><strong>Đổi trả 7 ngày</strong>Hỗ trợ đổi trả nếu sản phẩm đủ điều kiện.</p>
+        </div>
+        <div>
+            <i data-lucide="truck"></i>
+            <p><strong>Giao hàng Đà Nẵng</strong>Miễn phí ship đơn hàng trên 1 triệu.</p>
         </div>
     </div>
-    {% endblock content_checkout %}
+</section>
+{% endblock content_checkout %}

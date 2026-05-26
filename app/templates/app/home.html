@@ -1,5 +1,6 @@
 {% extends 'app/base.html' %}
 {% load static %}
+{% load currency %}
 {% block banner_slider %}
 <div id="carouselExampleControlsNoTouching" class="carousel slide" data-bs-touch="false">
   <div class="carousel-indicators">
@@ -43,7 +44,7 @@
           <button data-product={{product.id}} data-action= "add" class="btn btn-outline-secondary add-btn update-cart" style="border-radius: 35px; background: #5a9daa; margin-right: 50px;border: 1px solid #0a0a0a; color:#0b0c0c">Thêm vào giỏ hàng</button>
           <a class="btn btn-outline-success"style="border-radius: 35px;background: #f5eff2; width: 90px; border: 1px solid #66b090; color:#66b090;" href="{% url 'detail' %}?id={{product.id}}">Xem</a>
         </div>
-        <h4 class="mt-3"><strong>{{product.price | floatformat:3}}VND</strong></h4>
+        <h4 class="mt-3"><strong>{{ product.price|vnd }}</strong></h4>
       </div>
     </div>
   </div>

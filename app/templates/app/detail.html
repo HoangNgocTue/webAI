@@ -1,48 +1,271 @@
 {% extends 'app/base.html' %}
 {% load static %}
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
-</head>
-<body>
-    {% block register %}
-    {% for product in products  %}
-   <div class="container mt-5 mb-5">
-    <div class="row d-flex justify-content-center">
-        <div class="col-md-10">
-            <div class="card">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="images p-3">
-                            <div class="text-center p-4"> <img id="main-image" src="{{product.ImageURL}}" width="350" /> </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="product p-4">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">  <span class="ml-1" ><a  href="{% url 'home' %}">Quay lại </a></span> </div> 
-                            </div>
-                            <div class="mt-4 mb-3"> 
-                                <h5 class="text-uppercase">{{product.name}}</h5>
-                                <div class="price d-flex flex-row align-items-center"> <span class="act-price">{{product.price | floatformat:3}} VND</span>
-                                </div>
-                            </div>
-                            <p class="about">{{product.detail}}</p>
-    
-                            <div class="cart mt-4 align-items-center" >
-                            <button data-product={{product.id}} data-action= "add" class="btn btn-danger text-uppercase mr-2 px-4 add-btn update-cart" style="background-color: brown; width: 200px;" >Thêm giỏ hàng</button>
-                             
-                            </div>
-                        </div>
-                    </div>
-                </div>
+{% load currency %}
+
+{% block main-content %}
+<style>
+    .detail-page {
+        background: #f6f8fb;
+        border-radius: 24px;
+        padding: 24px;
+    }
+
+    .breadcrumb-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #475569;
+        text-decoration: none;
+        font-weight: 800;
+        margin-bottom: 16px;
+    }
+
+    .product-detail-card {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 24px;
+        padding: 22px;
+        display: grid;
+        grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.08fr);
+        gap: 28px;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+    }
+
+    .product-gallery {
+        background: linear-gradient(135deg, #f8fafc, #eef9fb);
+        border-radius: 22px;
+        min-height: 460px;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        border: 1px solid #e5edf5;
+    }
+
+    .product-gallery img {
+        max-width: 100%;
+        max-height: 390px;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+    }
+
+    .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .product-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .product-tags span {
+        border-radius: 999px;
+        padding: 7px 11px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-weight: 800;
+        font-size: 0.88rem;
+    }
+
+    .product-info h1 {
+        font-size: clamp(1.8rem, 3vw, 2.8rem);
+        font-weight: 900;
+        margin: 0;
+        color: #111827;
+        line-height: 1.08;
+    }
+
+    .detail-price {
+        color: #e60000;
+        font-size: 2rem;
+        font-weight: 950;
+    }
+
+    .detail-description {
+        color: #475569;
+        font-size: 1.02rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .spec-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .spec-item {
+        background: #f8fafc;
+        border: 1px solid #e8edf5;
+        border-radius: 16px;
+        padding: 12px;
+    }
+
+    .spec-item span {
+        display: block;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.86rem;
+        margin-bottom: 4px;
+    }
+
+    .spec-item strong {
+        color: #111827;
+    }
+
+    .detail-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .detail-btn {
+        min-height: 54px;
+        border: 0;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        text-decoration: none;
+        font-weight: 900;
+    }
+
+    .detail-btn.primary {
+        background: linear-gradient(135deg, #e60000, #c90000);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(230, 0, 0, 0.2);
+    }
+
+    .detail-btn.secondary {
+        background: #111827;
+        color: #fff;
+    }
+
+    .policy-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .policy-card {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 18px;
+        padding: 14px;
+        color: #475569;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+    }
+
+    .policy-card strong {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #111827;
+        margin-bottom: 6px;
+    }
+
+    .detail-section {
+        margin-top: 18px;
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 22px;
+        padding: 22px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .detail-section h2 {
+        font-weight: 900;
+        margin-bottom: 12px;
+    }
+
+    @media (max-width: 980px) {
+        .product-detail-card {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 680px) {
+        .spec-grid,
+        .detail-actions,
+        .policy-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="detail-page">
+    <a class="breadcrumb-link" href="{% url 'home' %}">
+        <i data-lucide="arrow-left"></i>
+        Quay lại trang chủ
+    </a>
+
+    {% for product in products %}
+    <article class="product-detail-card">
+        <div class="product-gallery">
+            <img src="{{ product.ImageURL }}" alt="{{ product.name }}">
+        </div>
+
+        <div class="product-info">
+            <div class="product-tags">
+                {% for category in product.category.all %}
+                <span>{{ category.name }}</span>
+                {% endfor %}
+                {% if product.stock > 0 %}
+                <span>Còn {{ product.stock }} sản phẩm</span>
+                {% else %}
+                <span>Tạm hết hàng</span>
+                {% endif %}
+            </div>
+
+            <h1>{{ product.name }}</h1>
+            <div class="detail-price">{{ product.price|vnd }}</div>
+            <p class="detail-description">{{ product.detail }}</p>
+
+            <div class="spec-grid">
+                <div class="spec-item"><span>CPU</span><strong>{{ product.cpu|default:"Đang cập nhật" }}</strong></div>
+                <div class="spec-item"><span>GPU</span><strong>{{ product.gpu|default:"Đang cập nhật" }}</strong></div>
+                <div class="spec-item"><span>RAM</span><strong>{{ product.ram|default:"Đang cập nhật" }}</strong></div>
+                <div class="spec-item"><span>Lưu trữ</span><strong>{{ product.storage|default:"Đang cập nhật" }}</strong></div>
+                <div class="spec-item"><span>Màu sắc</span><strong>{{ product.get_color_display|default:"Đang cập nhật" }}</strong></div>
+                <div class="spec-item"><span>Tồn kho</span><strong>{{ product.stock }}</strong></div>
+            </div>
+
+            <div class="detail-actions">
+                <button data-product="{{ product.id }}" data-action="add" class="detail-btn primary add-btn update-cart">
+                    <i data-lucide="shopping-cart"></i>
+                    Thêm vào giỏ hàng
+                </button>
+                <a class="detail-btn secondary" href="{% url 'cart' %}">
+                    <i data-lucide="credit-card"></i>
+                    Đi tới giỏ hàng
+                </a>
             </div>
         </div>
+    </article>
+
+    <div class="policy-row mt-3">
+        <div class="policy-card">
+            <strong><i data-lucide="shield-check"></i> Bảo hành 12 tháng</strong>
+            Hỗ trợ bảo hành theo chính sách sản phẩm.
+        </div>
+        <div class="policy-card">
+            <strong><i data-lucide="rotate-ccw"></i> Đổi trả 7 ngày</strong>
+            Đổi trả nhanh nếu sản phẩm đủ điều kiện.
+        </div>
+        <div class="policy-card">
+            <strong><i data-lucide="truck"></i> Giao hàng Đà Nẵng</strong>
+            Miễn phí ship đơn hàng trên 1 triệu.
+        </div>
     </div>
-</div>
-{% endfor %}
-    {% endblock %}
-</body>
-</html>
+
+    <div class="detail-section">
+        <h2>Mô tả chi tiết</h2>
+        <p class="detail-description">{{ product.detail }}</p>
+        <p class="detail-description">Bạn có thể mở chatbot ở góc dưới để hỏi thêm về cấu hình, khoảng giá hoặc sản phẩm tương tự.</p>
+    </div>
+    {% endfor %}
+</section>
+{% endblock main-content %}

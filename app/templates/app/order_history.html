@@ -1,196 +1,457 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% load currency %}
+
+{% block main-content %}
 <style>
-/* Container chính */
-.order-history-container {
-    max-width: 1200px;
-}
+    .history-page {
+        background: #f6f8fb;
+        border-radius: 24px;
+        padding: 24px;
+    }
 
-/* Card chứa bảng */
-.order-card {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 25px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    border: 1px solid #e9ecef;
-    transition: all 0.3s ease;
-}
+    .history-hero {
+        background: linear-gradient(135deg, #e60000, #ff4b4b);
+        color: #fff;
+        border-radius: 22px;
+        padding: 28px;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+        box-shadow: 0 18px 40px rgba(230, 0, 0, 0.18);
+    }
 
-.order-card:hover {
-    box-shadow: 0 12px 35px rgba(0,0,0,0.12);
-}
+    .history-hero h1 {
+        font-size: clamp(1.8rem, 3vw, 2.8rem);
+        font-weight: 800;
+        margin: 0 0 8px;
+    }
 
-/* Tiêu đề chính */
-.order-title {
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #333;
-    text-align: center;
-    margin-bottom: 25px;
-    letter-spacing: 0.5px;
-}
+    .history-hero p {
+        margin: 0;
+        color: rgba(255,255,255,0.88);
+        max-width: 620px;
+    }
 
-/* Bảng */
-.table {
-    width: 100%;
-    border-collapse: collapse;
-}
+    .history-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 
-.table thead th {
-    background: linear-gradient(135deg, #80def0, #63c8d8);
-    color: white;
-    padding: 14px;
-    font-size: 1rem;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    border-bottom: none;
-}
+    .history-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 14px;
+        padding: 11px 16px;
+        text-decoration: none;
+        font-weight: 800;
+        border: 1px solid rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+    }
 
-.table tbody tr {
-    background: #fdfdfd;
-    transition: 0.3s ease;
-}
+    .history-btn.light {
+        background: #fff;
+        color: #e60000;
+    }
 
-.table tbody tr:hover {
-    background: #f0fbff;
-    transform: scale(1.01);
-}
+    .history-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin: 18px 0;
+    }
 
-.table td {
-    padding: 14px;
-    font-size: 0.95rem;
-    color: #333;
-    border-bottom: 1px solid #eaeaea;
-}
+    .history-stat {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    }
 
-/* Badge trạng thái */
-.badge-status {
-    padding: 8px 15px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
+    .history-stat span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
 
-.badge-approved {
-    background-color: #28a745;
-    color: white;
-}
+    .history-stat strong {
+        font-size: 1.55rem;
+        color: #111827;
+    }
 
-.badge-pending {
-    background-color: #ffc107;
-    color: #000;
-}
+    .history-list {
+        display: grid;
+        gap: 16px;
+    }
 
-/* Nút xem hóa đơn */
-.btn-view {
-    background: #63c8d8;
-    color: white;
-    padding: 8px 18px;
-    font-weight: 600;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: 0.25s ease;
-}
+    .order-card {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 20px;
+        padding: 18px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+    }
 
-.btn-view:hover {
-    background: #36b3c5;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    color: #fff;
-    transform: translateY(-2px);
-}
+    .order-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #eef2f7;
+    }
 
-/* Nút quay lại */
-.btn-back {
-    display: inline-block;
-    margin-top: 18px;
-    padding: 10px 18px;
-    color: #444;
-    background: #e3f7ff;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: 0.25s ease;
-}
+    .order-id {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.15rem;
+        font-weight: 900;
+        color: #111827;
+    }
 
-.btn-back:hover {
-    background: #c8efff;
-    color: #000;
-    transform: translateY(-2px);
-}
+    .order-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        color: #64748b;
+        margin-top: 8px;
+    }
 
+    .order-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .status-approved {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-canceled {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .order-products {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .order-product {
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 10px;
+    }
+
+    .order-product img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 14px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+    }
+
+    .order-product h3 {
+        font-size: 1rem;
+        font-weight: 800;
+        margin: 0 0 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .order-product p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.92rem;
+    }
+
+    .order-price {
+        text-align: right;
+        font-weight: 900;
+        color: #e60000;
+    }
+
+    .order-bottom {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid #eef2f7;
+    }
+
+    .order-status-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        border-radius: 14px;
+        padding: 12px;
+        margin-top: 14px;
+        font-weight: 700;
+    }
+
+    .order-status-note.approved {
+        background: #ecfdf5;
+        color: #166534;
+    }
+
+    .order-status-note.pending {
+        background: #fffbeb;
+        color: #92400e;
+    }
+
+    .order-status-note.canceled {
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .order-total span {
+        color: #64748b;
+        display: block;
+    }
+
+    .order-total strong {
+        font-size: 1.35rem;
+        color: #e60000;
+    }
+
+    .invoice-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 14px;
+        padding: 11px 15px;
+        background: #111827;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 800;
+    }
+
+    .invoice-btn.disabled {
+        background: #e5e7eb;
+        color: #6b7280;
+        pointer-events: none;
+    }
+
+    .empty-history {
+        background: #fff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 24px;
+        padding: 46px 22px;
+        text-align: center;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+    }
+
+    .empty-history .empty-icon {
+        width: 76px;
+        height: 76px;
+        border-radius: 24px;
+        display: inline-grid;
+        place-items: center;
+        background: #fee2e2;
+        color: #e60000;
+        margin-bottom: 16px;
+    }
+
+    .empty-history h2 {
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .empty-history p {
+        color: #64748b;
+        margin: 0 auto 20px;
+        max-width: 520px;
+    }
+
+    @media (max-width: 768px) {
+        .history-hero,
+        .order-top,
+        .order-bottom {
+            flex-direction: column;
+        }
+
+        .history-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .order-product {
+            grid-template-columns: 56px minmax(0, 1fr);
+        }
+
+        .order-price {
+            grid-column: 1 / -1;
+            text-align: left;
+        }
+    }
 </style>
 
-<div class="order-history-container container my-5">
-
-    <div class="order-card">
-
-        <h1 class="order-title">Lịch Sử Đơn Hàng</h1>
-
-        {% if orders %}
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Mã Đơn</th>
-                        <th>Ngày Đặt</th>
-                        <th>Tổng Tiền</th>
-                        <th>Trạng Thái</th>
-                        <th>Ngày Duyệt</th>
-                        <th>Hóa Đơn</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                {% for order in orders %}
-                    <tr>
-                        <td><strong>#{{ order.id }}</strong></td>
-                        <td>{{ order.date_order|date:"d-m-Y H:i" }}</td>
-
-                        <td class="text-success fw-bold">
-                            {{ order.get_cart_total }} VND
-                        </td>
-
-                        <td>
-                            <span class="badge-status 
-                                {% if order.status == 'approved' %}
-                                    badge-approved
-                                {% else %}
-                                    badge-pending
-                                {% endif %}">
-                                {% if order.status == 'approved' %}Đã duyệt{% else %}Chưa duyệt{% endif %}
-                            </span>
-                        </td>
-
-                        <td>
-                            {% if order.approved_date %}
-                                {{ order.approved_date|date:"d-m-Y H:i" }}
-                            {% else %}
-                                <span class="text-muted">Chưa duyệt</span>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {% if order.invoice %}
-                                <a href="{% url 'invoice_detail' order.invoice.id %}" class="btn-view">
-                                    Xem hóa đơn
-                                </a>
-                            {% else %}
-                                <span class="text-muted">Chưa có</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-
-            </table>
+<section class="history-page">
+    <div class="history-hero">
+        <div>
+            <h1>Lịch sử đơn hàng</h1>
+            <p>
+                {% if is_staff_history %}
+                Bạn đang xem toàn bộ đơn hàng của khách vì tài khoản hiện tại là admin/staff.
+                {% else %}
+                Theo dõi các đơn đã đặt, trạng thái xử lý và xem lại hóa đơn mua hàng tại Đà Nẵng Store.
+                {% endif %}
+            </p>
         </div>
-
-        <a href="{% url 'home' %}" class="btn-back">
-            ⬅ Quay lại
-        </a>
-
-        {% else %}
-            <p class="text-center text-muted">Bạn chưa có đơn hàng nào.</p>
-        {% endif %}
-
+        <div class="history-actions">
+            <a class="history-btn light" href="{% url 'home' %}">
+                <i data-lucide="shopping-bag"></i>
+                Mua tiếp
+            </a>
+            <a class="history-btn" href="{% url 'cart' %}">
+                <i data-lucide="shopping-cart"></i>
+                Giỏ hàng
+            </a>
+        </div>
     </div>
 
-</div>
+    <div class="history-stats">
+        <div class="history-stat">
+            <span><i data-lucide="receipt-text"></i> Tổng đơn hàng</span>
+            <strong>{{ total_orders }}</strong>
+        </div>
+        <div class="history-stat">
+            <span><i data-lucide="package-check"></i> Sản phẩm đã mua</span>
+            <strong>{{ total_items }}</strong>
+        </div>
+        <div class="history-stat">
+            <span><i data-lucide="wallet"></i> Tổng chi tiêu</span>
+            <strong>{{ total_spent|vnd }}</strong>
+        </div>
+        <div class="history-stat">
+            <span><i data-lucide="check-circle-2"></i> Đã duyệt</span>
+            <strong>{{ approved_orders }}</strong>
+        </div>
+    </div>
+
+    {% if orders %}
+    <div class="history-list">
+        {% for order in orders %}
+        <article class="order-card">
+            <div class="order-top">
+                <div>
+                    <div class="order-id">
+                        <i data-lucide="hash"></i>
+                        Đơn hàng #{{ order.id }}
+                    </div>
+                    <div class="order-meta">
+                        <span><i data-lucide="calendar-days"></i> {{ order.date_order|date:"d/m/Y H:i" }}</span>
+                        <span><i data-lucide="boxes"></i> {{ order.get_cart_items }} sản phẩm</span>
+                        {% if order.approved_date %}
+                        <span><i data-lucide="check-check"></i> Duyệt lúc {{ order.approved_date|date:"d/m/Y H:i" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if order.status == 'approved' %}
+                <span class="status-badge status-approved"><i data-lucide="check-circle-2"></i> Đã duyệt</span>
+                {% elif order.status == 'canceled' %}
+                <span class="status-badge status-canceled"><i data-lucide="x-circle"></i> Đã hủy</span>
+                {% else %}
+                <span class="status-badge status-pending"><i data-lucide="clock-3"></i> Chờ admin duyệt</span>
+                {% endif %}
+            </div>
+
+            {% if order.status == 'approved' %}
+            <div class="order-status-note approved">
+                <i data-lucide="truck"></i>
+                <span>Đơn hàng đã được admin duyệt{% if order.approved_date %} lúc {{ order.approved_date|date:"d/m/Y H:i" }}{% endif %}. Đà Nẵng Store đang chuẩn bị giao hàng.</span>
+            </div>
+            {% elif order.status == 'canceled' %}
+            <div class="order-status-note canceled">
+                <i data-lucide="ban"></i>
+                <span>Đơn hàng đã bị hủy. Bạn có thể liên hệ hotline 0905 123 456 nếu cần hỗ trợ.</span>
+            </div>
+            {% else %}
+            <div class="order-status-note pending">
+                <i data-lucide="hourglass"></i>
+                <span>Đơn hàng đang chờ admin duyệt. Khi được duyệt, trạng thái sẽ đổi sang “Đã duyệt” và hiển thị thời gian duyệt.</span>
+            </div>
+            {% endif %}
+
+            <div class="order-products">
+                {% for item in order.orderitem_set.all %}
+                <div class="order-product">
+                    <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}">
+                    <div>
+                        <h3>{{ item.product.name }}</h3>
+                        <p>Số lượng: {{ item.quantity }}{% if item.product.cpu %} · CPU: {{ item.product.cpu }}{% endif %}{% if item.product.ram %} · RAM: {{ item.product.ram }}{% endif %}</p>
+                    </div>
+                    <div class="order-price">{{ item.get_total|vnd }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="order-bottom">
+                <div class="order-total">
+                    <span>Tổng thanh toán</span>
+                    <strong>{{ order.get_cart_total|vnd }}</strong>
+                </div>
+                {% if order.invoice_obj %}
+                <a href="{% url 'invoice_detail' order.invoice_obj.id %}" class="invoice-btn">
+                    <i data-lucide="file-text"></i>
+                    {% if order.status == 'approved' %}Xem hóa đơn{% else %}Xem phiếu đặt hàng{% endif %}
+                </a>
+                {% else %}
+                <span class="invoice-btn disabled">
+                    <i data-lucide="file-clock"></i>
+                    Chưa có hóa đơn
+                </span>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-history">
+        <div class="empty-icon">
+            <i data-lucide="shopping-bag"></i>
+        </div>
+        <h2>Bạn chưa có đơn hàng nào</h2>
+        <p>Khi bạn đặt mua laptop, điện thoại hoặc phụ kiện, đơn hàng sẽ xuất hiện tại đây để tiện theo dõi.</p>
+        <a class="invoice-btn" href="{% url 'home' %}">
+            <i data-lucide="arrow-right"></i>
+            Khám phá sản phẩm
+        </a>
+    </div>
+    {% endif %}
+</section>
+{% endblock main-content %}

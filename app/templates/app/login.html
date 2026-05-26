@@ -1,82 +1,65 @@
 {% extends 'app/base.html' %}
 {% load static %}
 
-<html>
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Đăng nhập</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-</head>
-
-<body>
-    {% block register %}
-    <section class="vh-100 bg-image"
-        style="background-image: url('{% static "app/images/banner/bb3.jpg" %}');">
-        <div class="mask d-flex align-items-center h-100 gradient-custom-3">
-            <div class="container h-100">
-                <div class="row d-flex justify-content-end align-items-center h-100">
-                    <!-- Cột chứa khung đăng nhập -->
-                    <div class="col-12 col-md-6 col-lg-5 col-xl-4 ms-auto">
-                        <div class="card h-100" style="border-radius: 15px; width: 100%;">
-                            <div class="card-body p-5">
-                                <!-- Thêm logo và tiêu đề -->
-                                <div class="d-flex align-items-center justify-content-center mb-4">
-                                  <img src="{% static 'app/images/Logo_dhktdn.png' %}" width="50" height="50" alt="Logo">
-                                    <h2 class="text-uppercase text-center mb-0 ms-3">Đăng nhập</h2>
-                                </div>
-
-                                <form method="POST">
-                                    {% csrf_token %}
-
-                                    <!-- Tên người dùng -->
-                                    <div data-mdb-input-init class="form-outline mb-4">
-                                        <label class="form-label" for="username">Tên người dùng</label>
-                                        <input type="text" name="username" id="username"
-                                            class="form-control form-control-lg" value="{{ form.username.value }}"
-                                            required />
-                                    </div>
-
-                                    <!-- Mật khẩu -->
-                                    <div data-mdb-input-init class="form-outline mb-4">
-                                        <label class="form-label" for="password">Mật khẩu</label>
-                                        <input type="password" name="password" id="password"
-                                            class="form-control form-control-lg" required />
-                                    </div>
-
-                                    <!-- Nút Đăng nhập -->
-                                    <div class="d-flex justify-content-center">
-                                        <button type="submit"
-                                            class="btn btn-success btn-block btn-lg gradient-custom-4 text-body">
-                                            Đăng nhập
-                                        </button>
-                                    </div>
-
-                                    <!-- Đăng ký -->
-                                    <p class="text-center text-muted mt-5 mb-0">
-                                        Chưa có tài khoản? <a href="{% url 'register' %}"
-                                            class="fw-bold text-body"><u>Đăng ký tại đây</u></a>
-                                    </p>
-                                </form>
-
-                                {% if messages %}
-                                <div class="alert alert-warning mt-3">
-                                    {% for message in messages %}
-                                    <p>{{ message }}</p>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+{% block register %}
+<section class="auth-page">
+    <div class="auth-shell">
+        <div class="auth-panel auth-copy">
+            <span class="auth-kicker">Đà Nẵng Store</span>
+            <h1>Chào mừng bạn quay lại</h1>
+            <p>Đăng nhập để theo dõi đơn hàng, lưu giỏ hàng và nhận tư vấn sản phẩm công nghệ phù hợp hơn.</p>
+            <div class="auth-benefits">
+                <span><i data-lucide="shield-check"></i> Bảo hành 12 tháng</span>
+                <span><i data-lucide="truck"></i> Miễn phí ship đơn trên 1 triệu</span>
+                <span><i data-lucide="headphones"></i> Hỗ trợ nhanh tại Đà Nẵng</span>
             </div>
         </div>
-    </section>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
-    {% endblock register %}
-</body>
 
-</html>
+        <div class="auth-panel auth-card">
+            <div class="auth-brand">
+                <img src="{% static 'app/images/Logo_dhktdn.png' %}" alt="Đà Nẵng Store">
+                <div>
+                    <strong>Đăng nhập</strong>
+                    <span>Tiếp tục mua sắm thông minh</span>
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="auth-alert">
+                {% for message in messages %}
+                <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" class="auth-form">
+                {% csrf_token %}
+                <label for="username">Tên đăng nhập</label>
+                <div class="auth-input">
+                    <i data-lucide="user"></i>
+                    <input type="text" name="username" id="username" placeholder="Nhập tên đăng nhập" required autofocus>
+                </div>
+
+                <label for="password">Mật khẩu</label>
+                <div class="auth-input">
+                    <i data-lucide="lock"></i>
+                    <input type="password" name="password" id="password" placeholder="Nhập mật khẩu" required>
+                    <button type="button" class="toggle-password" data-target="password" aria-label="Hiện mật khẩu">
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+
+                <button type="submit" class="auth-submit">
+                    <i data-lucide="log-in"></i>
+                    Đăng nhập
+                </button>
+            </form>
+
+            <p class="auth-switch">
+                Chưa có tài khoản?
+                <a href="{% url 'register' %}">Tạo tài khoản mới</a>
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock register %}

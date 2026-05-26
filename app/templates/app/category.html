@@ -1,32 +1,176 @@
 {% extends 'app/base.html' %}
 {% load static %}
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
-</head>
-<body>
-    {% block register %}
-   <div class="row" style="width:100%">
-  {%for product in products %}
-  <div class="col-lg-4 col-md-6 mb-4">
-    <div class="card">
-      <img src="{{product.ImageURL}}" class="card-img-top" alt="Sửa rửa mặt" height="330px">
-      <div class="card-body d-flex flex-column">
-        <h6><strong>{{product.name}}</strong></h6>
-        <hr>
+{% load currency %}
 
-        <div class="d-flex justify-content-between align-items-center">
-          <button data-product={{product.id}} data-action= "add" class="btn btn-outline-secondary add-btn update-cart">Thêm vào giỏ hàng</button>
-          <a class="btn btn-outline-success" href="{% url 'detail' %}?id={{product.id}}">Xem</a>
+{% block main-content %}
+<style>
+    .catalog-page {
+        background: #f6f8fb;
+        border-radius: 24px;
+        padding: 24px;
+    }
+
+    .catalog-hero {
+        background: linear-gradient(135deg, #0f172a, #4eaeb9);
+        color: #fff;
+        border-radius: 22px;
+        padding: 26px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .catalog-hero h1 {
+        font-weight: 900;
+        margin: 0 0 8px;
+    }
+
+    .catalog-hero p {
+        margin: 0;
+        color: rgba(255,255,255,0.86);
+    }
+
+    .catalog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-top: 18px;
+    }
+
+    .product-card-modern {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-card-modern .image-wrap {
+        height: 220px;
+        background: linear-gradient(135deg, #f8fafc, #eef9fb);
+        display: grid;
+        place-items: center;
+        padding: 18px;
+    }
+
+    .product-card-modern img {
+        max-width: 100%;
+        max-height: 190px;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+    }
+
+    .product-body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .product-body h2 {
+        font-size: 1.05rem;
+        font-weight: 900;
+        margin: 0;
+        min-height: 48px;
+    }
+
+    .product-spec {
+        color: #64748b;
+        font-size: 0.9rem;
+        min-height: 42px;
+    }
+
+    .product-price {
+        color: #e60000;
+        font-size: 1.25rem;
+        font-weight: 950;
+    }
+
+    .product-actions {
+        display: grid;
+        grid-template-columns: 1fr 88px;
+        gap: 8px;
+        margin-top: auto;
+    }
+
+    .product-actions button,
+    .product-actions a {
+        border: 0;
+        border-radius: 14px;
+        padding: 11px 12px;
+        font-weight: 850;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+    }
+
+    .product-actions button {
+        background: #111827;
+        color: #fff;
+    }
+
+    .product-actions a {
+        background: #fee2e2;
+        color: #e60000;
+    }
+
+    .empty-catalog {
+        margin-top: 18px;
+        background: #fff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 22px;
+        padding: 42px;
+        text-align: center;
+        color: #64748b;
+    }
+</style>
+
+<section class="catalog-page">
+    <div class="catalog-hero">
+        <div>
+            <h1>Danh mục sản phẩm</h1>
+            <p>Khám phá các thiết bị công nghệ đang có tại Đà Nẵng Store.</p>
         </div>
-        <h4 class="mt-3"><strong>{{product.price | floatformat:3}}VND</strong></h4>
-      </div>
+        <span>{{ products|length }} sản phẩm</span>
     </div>
-  </div>
-  {% endfor %}
-</div>
-    {% endblock %}
-</body>
-</html>
+
+    {% if products %}
+    <div class="catalog-grid">
+        {% for product in products %}
+        <article class="product-card-modern">
+            <a class="image-wrap" href="{% url 'detail' %}?id={{ product.id }}">
+                <img src="{{ product.ImageURL }}" alt="{{ product.name }}">
+            </a>
+            <div class="product-body">
+                <h2>{{ product.name }}</h2>
+                <div class="product-spec">
+                    {% if product.cpu %}{{ product.cpu }}{% endif %}
+                    {% if product.ram %} · {{ product.ram }}{% endif %}
+                    {% if product.storage %} · {{ product.storage }}{% endif %}
+                </div>
+                <div class="product-price">{{ product.price|vnd }}</div>
+                <div class="product-actions">
+                    <button data-product="{{ product.id }}" data-action="add" class="add-btn update-cart">
+                        <i data-lucide="shopping-cart"></i>
+                        Thêm giỏ
+                    </button>
+                    <a href="{% url 'detail' %}?id={{ product.id }}">Xem</a>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-catalog">
+        <h2>Chưa có sản phẩm trong danh mục này</h2>
+        <p>Vui lòng chọn danh mục khác hoặc quay lại trang chủ.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock main-content %}

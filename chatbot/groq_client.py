@@ -1,19 +1,12 @@
-import os
-from groq import Groq
-from dotenv import load_dotenv
-
-load_dotenv()
+from chatbot.ai_client import get_ai_settings
 
 
 def get_groq_client():
+    settings = get_ai_settings()
 
-    api_key = os.getenv("GROQ_API_KEY")
-
-    if not api_key:
+    if settings["provider"] != "groq" or not settings["api_key"]:
         return None
 
-    client = Groq(
-        api_key=api_key
+    raise RuntimeError(
+        "get_groq_client() is deprecated. Use chatbot.ai_client.create_chat_completion() instead."
     )
-
-    return client
