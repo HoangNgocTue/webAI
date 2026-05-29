@@ -15,7 +15,9 @@ services:
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://*.onrender.com"
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: webbanhang-db
+          property: connectionString
       - key: AI_PROVIDER
         value: "openai"
       - key: OPENAI_API_KEY
@@ -26,3 +28,7 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: "llama-3.1-8b-instant"
+
+databases:
+  - name: webbanhang-db
+    plan: free
