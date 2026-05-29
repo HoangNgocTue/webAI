@@ -4,16 +4,21 @@ import requests
 from django.conf import settings as django_settings
 from dotenv import load_dotenv
 
-try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None
-
 
 load_dotenv()
 
 
 PROVIDERS = {
+    "openai": {
+        "name": "OpenAI",
+        "api_key_env": "OPENAI_API_KEY",
+        "model_env": "OPENAI_MODEL",
+        "base_url_env": "OPENAI_BASE_URL",
+        "default_base_url": "https://api.openai.com/v1",
+        "default_model": "gpt-4o-mini",
+        "api_key_aliases": ("GPT_API_KEY",),
+        "model_aliases": ("GPT_MODEL",),
+    },
     "groq": {
         "name": "Groq",
         "api_key_env": "GROQ_API_KEY",
@@ -22,47 +27,44 @@ PROVIDERS = {
         "default_base_url": "https://api.groq.com/openai/v1",
         "default_model": "llama-3.1-8b-instant",
     },
-    "openai": {
-        "name": "OpenAI",
-        "api_key_env": "OPENAI_API_KEY",
-        "model_env": "OPENAI_MODEL",
-        "base_url_env": "OPENAI_BASE_URL",
-        "default_base_url": "https://api.openai.com/v1",
-        "default_model": "gpt-4o-mini",
-    },
-    "gemini": {
-        "name": "Gemini",
-        "api_key_env": "GEMINI_API_KEY",
-        "model_env": "GEMINI_MODEL",
-        "base_url_env": "GEMINI_BASE_URL",
-        "default_base_url": "",
-        "default_model": "gemini-2.0-flash",
-    },
 }
 
 
 def _selected_provider() -> str:
     provider = os.getenv("AI_PROVIDER", "").strip().lower()
 
-    if provider in PROVIDERS and _setting_value(PROVIDERS[provider]["api_key_env"]):
+    if provider == "openai" and _setting_value("OPENAI_API_KEY"):
         return provider
 
     if _setting_value("OPENAI_API_KEY"):
         return "openai"
 
-    if _setting_value("GEMINI_API_KEY"):
-        return "gemini"
+    if provider == "groq" and _setting_value("GROQ_API_KEY"):
+        return provider
 
     if _setting_value("GROQ_API_KEY"):
         return "groq"
 
-    return "groq"
+    return "openai"
 
 
 def _setting_value(name: str, default: str = "") -> str:
     value = os.getenv(name)
     if value:
         return value.strip()
+
+    for config in PROVIDERS.values():
+        if name == config["api_key_env"]:
+            for alias in config.get("api_key_aliases", ()):
+                value = os.getenv(alias)
+                if value:
+                    return value.strip()
+
+        if name == config["model_env"]:
+            for alias in config.get("model_aliases", ()):
+                value = os.getenv(alias)
+                if value:
+                    return value.strip()
 
     try:
         value = getattr(django_settings, name, default)
@@ -93,9 +95,6 @@ def create_chat_completion(messages: list, temperature: float = 0.7, max_tokens:
         raise RuntimeError(
             f"Missing {settings['api_key_env']} for {settings['provider_name']}."
         )
-
-    if settings["provider"] == "gemini":
-        return _create_gemini_completion(settings, messages, temperature, max_tokens)
 
     response = requests.post(
         f"{settings['base_url']}/chat/completions",
@@ -132,31 +131,3 @@ def create_chat_completion(messages: list, temperature: float = 0.7, max_tokens:
         raise RuntimeError(
             f"{settings['provider_name']} returned an unexpected response format."
         ) from exc
-
-
-def _create_gemini_completion(settings: dict, messages: list, temperature: float, max_tokens: int) -> str:
-    if genai is None:
-        raise RuntimeError("google-generativeai is not installed.")
-
-    genai.configure(api_key=settings["api_key"])
-    model = genai.GenerativeModel(settings["model"])
-
-    prompt_parts = []
-    for message in messages:
-        role = message.get("role", "user")
-        content = message.get("content", "")
-        prompt_parts.append(f"{role.upper()}:\n{content}")
-
-    response = model.generate_content(
-        "\n\n".join(prompt_parts),
-        generation_config={
-            "temperature": temperature,
-            "max_output_tokens": max_tokens,
-        },
-    )
-
-    text = getattr(response, "text", "") or ""
-    if not text.strip():
-        raise RuntimeError("Gemini returned an empty response.")
-
-    return text.strip()

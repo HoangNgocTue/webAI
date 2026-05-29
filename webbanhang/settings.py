@@ -173,4 +173,3 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/images/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR,'app/static/images')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')

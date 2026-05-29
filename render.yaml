@@ -19,15 +19,15 @@ services:
           name: webbanhang-db
           property: connectionString
       - key: AI_PROVIDER
+        value: "openai"
+      - key: OPENAI_API_KEY
         sync: false
+      - key: OPENAI_MODEL
+        value: "gpt-4o-mini"
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
-        sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        sync: false
+        value: "llama-3.1-8b-instant"
 
 databases:
   - name: webbanhang-db
