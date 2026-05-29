@@ -28,6 +28,14 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: "llama-3.1-8b-instant"
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: "admin"
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: "admin@example.com"
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: SEED_SAMPLE_DATA
+        value: "True"
 
 databases:
   - name: webbanhang-db
