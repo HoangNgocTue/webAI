@@ -287,18 +287,79 @@
     }
 
     @media (max-width: 760px) {
+        .cart-page {
+            border-radius: 16px;
+            padding: 12px;
+        }
+
         .cart-hero {
             flex-direction: column;
             align-items: flex-start;
+            border-radius: 16px;
+            padding: 18px;
+            gap: 14px;
+        }
+
+        .cart-hero h1 {
+            font-size: 1.55rem;
+            line-height: 1.15;
+        }
+
+        .cart-hero p {
+            font-size: 0.95rem;
+        }
+
+        .cart-hero .history-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .cart-panel,
+        .cart-summary,
+        .empty-cart {
+            border-radius: 16px;
+        }
+
+        .cart-panel,
+        .cart-summary {
+            padding: 14px;
+        }
+
+        .cart-heading {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .cart-heading h2,
+        .cart-summary h2 {
+            font-size: 1.1rem;
+            line-height: 1.2;
         }
 
         .cart-item {
             grid-template-columns: 78px minmax(0, 1fr);
+            gap: 10px;
+            border-radius: 14px;
+            padding: 10px;
         }
 
         .cart-item img {
             width: 78px;
             height: 78px;
+            border-radius: 12px;
+        }
+
+        .cart-item h3 {
+            font-size: 0.98rem;
+            line-height: 1.25;
+        }
+
+        .cart-specs {
+            font-size: 0.86rem;
+        }
+
+        .cart-unit-price {
+            font-size: 0.98rem;
         }
 
         .qty-control,
@@ -306,8 +367,43 @@
             grid-column: 1 / -1;
         }
 
+        .qty-control {
+            width: 100%;
+            justify-content: space-between;
+            border-radius: 14px;
+        }
+
         .cart-line-total {
             text-align: left;
+            padding-top: 2px;
+        }
+
+        .summary-total {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .summary-total strong {
+            font-size: 1.25rem;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .cart-item {
+            grid-template-columns: 64px minmax(0, 1fr);
+        }
+
+        .cart-item img {
+            width: 64px;
+            height: 64px;
+        }
+
+        .checkout-btn,
+        .continue-btn {
+            border-radius: 12px;
+            padding: 12px;
         }
     }
 </style>

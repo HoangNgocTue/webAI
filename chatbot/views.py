@@ -21,7 +21,18 @@ PRICE_UNIT = Decimal("1000000")
 
 
 CATEGORY_SLUGS = {"laptop", "dien-thoai", "linh-kien-pc", "phu-kien"}
-INTENTS = {"search", "more", "similar", "detail", "add_to_cart", "store_info", "smalltalk", "unknown"}
+INTENTS = {
+    "search",
+    "more",
+    "similar",
+    "detail",
+    "add_to_cart",
+    "view_cart",
+    "remove_from_cart",
+    "store_info",
+    "smalltalk",
+    "unknown",
+}
 
 
 def normalize_text(value: str) -> str:
@@ -273,8 +284,57 @@ def get_ai_reply(request, message: str, products: list, filters: dict, fallback_
         return fallback_reply
 
 
+def clean_intent_text(message: str) -> str:
+    normalized = normalize_text(message)
+    normalized = re.sub(r"[^\w\s]", " ", normalized)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def has_cart_word(message: str) -> bool:
+    normalized = clean_intent_text(message)
+    return any(keyword in normalized for keyword in ["gio hang", "cart"])
+
+
+def is_cart_view_request(message: str) -> bool:
+    normalized = clean_intent_text(message)
+    add_remove_words = [
+        "them",
+        "add",
+        "mua",
+        "lay",
+        "dat",
+        "chon",
+        "xoa",
+        "bo",
+        "go",
+        "remove",
+        "delete",
+    ]
+    if not has_cart_word(message) or any(word in normalized.split() for word in add_remove_words):
+        return False
+
+    direct_phrases = {
+        "gio hang",
+        "gio hang cua toi",
+        "xem gio hang",
+        "xem cart",
+        "mo gio hang",
+        "mo cart",
+        "cart",
+        "cart cua toi",
+        "kiem tra gio hang",
+    }
+    return normalized in direct_phrases or any(
+        phrase in normalized
+        for phrase in ["xem gio hang", "mo gio hang", "mo cart", "xem cart", "kiem tra gio hang"]
+    )
+
+
 def is_add_to_cart_request(message: str) -> bool:
     normalized = normalize_text(message)
+    if is_cart_view_request(message) or is_remove_from_cart_request(message):
+        return False
+
     cart_keywords = [
         "them",
         "them gio",
@@ -288,7 +348,6 @@ def is_add_to_cart_request(message: str) -> bool:
         "cho cai nay vao gio",
         "cho mau nay vao gio",
         "vao gio hang",
-        "gio hang",
         "add cart",
         "add to cart",
     ]
@@ -297,6 +356,73 @@ def is_add_to_cart_request(message: str) -> bool:
         any(keyword in normalized for keyword in action_keywords)
         and (parse_referenced_product_index(message) is not None or is_previous_product_reference(message))
     )
+
+
+def is_remove_from_cart_request(message: str) -> bool:
+    normalized = clean_intent_text(message)
+    remove_words = ["xoa", "bo", "go", "remove", "delete"]
+    ignored_phrases = [
+        "xoa lich su",
+        "xoa chat",
+        "xoa tin nhan",
+        "xoa hoi thoai",
+        "bo loc",
+    ]
+    if any(phrase in normalized for phrase in ignored_phrases):
+        return False
+
+    remove_phrases = [
+        "khoi gio",
+        "khoi gio hang",
+        "ra khoi gio",
+        "ra khoi gio hang",
+        "trong gio hang",
+        "trong cart",
+    ]
+    words = normalized.split()
+    has_remove_word = any(word in words for word in remove_words)
+    starts_with_remove = any(normalized.startswith(f"{word} ") for word in remove_words)
+    has_target_words = len([word for word in words if word not in remove_words]) >= 1
+    return has_remove_word and (
+        has_cart_word(message)
+        or any(phrase in normalized for phrase in remove_phrases)
+        or (starts_with_remove and has_target_words)
+    )
+
+
+def is_confirmation_yes(message: str) -> bool:
+    normalized = clean_intent_text(message)
+    return normalized in {
+        "dung",
+        "dung roi",
+        "chinh xac",
+        "ok",
+        "oke",
+        "yes",
+        "co",
+        "phai",
+        "phai roi",
+        "xoa di",
+        "xoa dung sp do",
+    }
+
+
+def is_confirmation_no(message: str) -> bool:
+    normalized = clean_intent_text(message)
+    return normalized in {
+        "khong",
+        "khong dung",
+        "khong phai",
+        "ko",
+        "ko dung",
+        "ko phai",
+        "khong phai sp do",
+        "ko phai sp do",
+        "sai",
+        "sai roi",
+        "nham",
+        "nham roi",
+    }
 
 
 def is_more_products_request(message: str) -> bool:
@@ -383,7 +509,19 @@ def strip_cart_words(message: str) -> str:
         r"(?i)\bđặt\b",
         r"(?i)\bchon\b",
         r"(?i)\bchọn\b",
+        r"(?i)\bxoa\b",
+        r"(?i)\bbo\b",
+        r"(?i)\bgo\b",
+        r"(?i)\bremove\b",
+        r"(?i)\bdelete\b",
         r"(?i)\badd to cart\b",
+        r"(?i)\bmo cart\b",
+        r"(?i)\bxem cart\b",
+        r"(?i)\bcart\b",
+        r"(?i)\bkhoi gio hang\b",
+        r"(?i)\bkhoi gio\b",
+        r"(?i)\bra khoi gio hang\b",
+        r"(?i)\bra khoi gio\b",
         r"(?i)\bvao gio hang\b",
         r"(?i)\bvào giỏ hàng\b",
         r"(?i)\bgio hang\b",
@@ -752,6 +890,180 @@ def add_product_to_cart(request, product):
     return order
 
 
+def get_active_cart_order(request):
+    if not request.user.is_authenticated:
+        return None
+    return Order.objects.filter(customer=request.user, complete=False).first()
+
+
+def get_cart_items_for_request(request):
+    order = get_active_cart_order(request)
+    if not order:
+        return None, []
+    items = list(order.orderitem_set.select_related("product").filter(quantity__gt=0, product__isnull=False))
+    return order, items
+
+
+def format_cart_reply(request) -> str:
+    if not request.user.is_authenticated:
+        return "Bạn cần đăng nhập để xem giỏ hàng.\n\n[Đăng nhập](/login/)"
+
+    order, items = get_cart_items_for_request(request)
+    if not order or not items:
+        return "Giỏ hàng của bạn đang trống.\n\n[Xem giỏ hàng](/cart/)"
+
+    rows = []
+    for index, item in enumerate(items, 1):
+        line_total = f"{int(item.get_total):,}".replace(",", ".")
+        rows.append(f"{index}. **{item.product.name}** x {item.quantity} - {line_total}đ")
+
+    cart_total = f"{int(order.get_cart_total):,}".replace(",", ".")
+    return (
+        "Giỏ hàng hiện tại của bạn:\n\n"
+        f"{chr(10).join(rows)}\n\n"
+        f"- Tổng số lượng: {order.get_cart_items}\n"
+        f"- Tổng tạm tính: {cart_total}đ\n\n"
+        "[Mở giỏ hàng](/cart/) | [Thanh toán](/checkout/)"
+    )
+
+
+def score_product_name(query: str, product) -> int:
+    keyword = normalize_text(query)
+    words = [word for word in keyword.split() if len(word) >= 2]
+    haystack = normalize_text(product.name)
+    score = sum(1 for word in words if word in haystack)
+    if keyword and keyword in haystack:
+        score += 10
+    if haystack and haystack in keyword:
+        score += 12
+    return score
+
+
+def find_cart_items_by_name(request, message: str) -> list:
+    keyword = strip_cart_words(message)
+    order, items = get_cart_items_for_request(request)
+    if not items:
+        return []
+
+    scored = []
+    for item in items:
+        score = score_product_name(keyword, item.product)
+        if score:
+            scored.append((score, item.product.price, item))
+
+    scored.sort(key=lambda entry: (-entry[0], entry[1]))
+    return [item for score, price, item in scored]
+
+
+def clear_cart_confirmation(request):
+    request.session.pop("chatbot_pending_cart_action", None)
+    request.session.modified = True
+
+
+def set_cart_confirmation(request, action: str, items: list, index: int = 0):
+    request.session["chatbot_pending_cart_action"] = {
+        "action": action,
+        "item_ids": [item.id for item in items],
+        "index": index,
+    }
+    request.session.modified = True
+
+
+def get_pending_cart_confirmation(request):
+    pending = request.session.get("chatbot_pending_cart_action") or {}
+    item_ids = pending.get("item_ids") or []
+    items = list(OrderItem.objects.select_related("product").filter(id__in=item_ids, quantity__gt=0))
+    item_map = {item.id: item for item in items}
+    ordered_items = [item_map[item_id] for item_id in item_ids if item_id in item_map]
+    if not pending or not ordered_items:
+        clear_cart_confirmation(request)
+        return None, [], 0
+    return pending.get("action"), ordered_items, int(pending.get("index") or 0)
+
+
+def build_confirm_remove_reply(request, items: list, index: int = 0) -> str:
+    if not items:
+        clear_cart_confirmation(request)
+        return "Mình chưa tìm thấy sản phẩm đó trong giỏ hàng của bạn."
+
+    index = min(max(index, 0), len(items) - 1)
+    set_cart_confirmation(request, "remove", items, index)
+    product = items[index].product
+    extra = ""
+    if len(items) > 1:
+        extra = f"\n\nMình tìm thấy {len(items)} sản phẩm gần giống trong giỏ. Nếu không phải, bạn nhắn **không phải** để mình chuyển sang sản phẩm khác."
+    return (
+        f"Bạn muốn xóa **{product.name}** khỏi giỏ hàng đúng không?\n\n"
+        "Trả lời **đúng** để xóa, hoặc **không phải** nếu mình chọn nhầm."
+        f"{extra}"
+    )
+
+
+def remove_cart_item(request, item) -> str:
+    product = item.product
+    item.delete()
+    clear_cart_confirmation(request)
+    order = get_active_cart_order(request)
+    total_items = order.get_cart_items if order else 0
+    total_amount = f"{int(order.get_cart_total):,}".replace(",", ".") if order else "0"
+    return (
+        f"Đã xóa **{product.name}** khỏi giỏ hàng.\n\n"
+        f"- Số lượng còn lại: {total_items}\n"
+        f"- Tổng tạm tính: {total_amount}đ\n\n"
+        "[Xem giỏ hàng](/cart/)"
+    )
+
+
+def handle_pending_cart_confirmation(request, message: str) -> str | None:
+    action, items, index = get_pending_cart_confirmation(request)
+    if action != "remove":
+        return None
+
+    if is_confirmation_yes(message):
+        return remove_cart_item(request, items[index])
+
+    if is_confirmation_no(message):
+        next_index = index + 1
+        if next_index < len(items):
+            return build_confirm_remove_reply(request, items, next_index)
+        clear_cart_confirmation(request)
+        return (
+            "Mình đã hết sản phẩm gần giống trong giỏ hàng. "
+            "Bạn nhắn lại tên sản phẩm muốn xóa, ví dụ: **xóa ASUS ROG Strix**."
+        )
+
+    replacement_items = find_cart_items_by_name(request, message)
+    if replacement_items:
+        return build_confirm_remove_reply(request, replacement_items)
+
+    return None
+
+
+def build_remove_from_cart_reply(request, message: str) -> str:
+    if not request.user.is_authenticated:
+        clear_cart_confirmation(request)
+        return "Bạn cần đăng nhập để xóa sản phẩm trong giỏ hàng.\n\n[Đăng nhập](/login/)"
+
+    order, current_items = get_cart_items_for_request(request)
+    if not order or not current_items:
+        clear_cart_confirmation(request)
+        return "Giỏ hàng của bạn đang trống, nên chưa có sản phẩm để xóa."
+
+    ref_index = parse_referenced_product_index(message)
+    if ref_index is not None and ref_index < len(current_items):
+        return build_confirm_remove_reply(request, [current_items[ref_index]])
+
+    matched_items = find_cart_items_by_name(request, message)
+    if not matched_items:
+        clear_cart_confirmation(request)
+        return (
+            "Mình chưa tìm thấy sản phẩm đó trong giỏ hàng. "
+            "Bạn có thể nhắn **xem giỏ hàng** để xem đúng tên sản phẩm đang có."
+        )
+
+    return build_confirm_remove_reply(request, matched_items)
+
+
 def build_add_to_cart_reply(request, product) -> str:
     if not product:
         return (
@@ -1010,6 +1322,12 @@ def chatbot_api(request):
     if not user_message:
         return JsonResponse({"reply": "Vui lòng nhập tin nhắn."})
 
+    pending_reply = handle_pending_cart_confirmation(request, user_message)
+    if pending_reply:
+        if request.user.is_authenticated:
+            ChatHistory.objects.create(user=request.user, message=user_message, reply=pending_reply)
+        return JsonResponse({"reply": pending_reply})
+
     ai_intent = get_ai_intent(request, user_message)
     intent_name = ai_intent.get("intent")
 
@@ -1019,30 +1337,48 @@ def chatbot_api(request):
             ChatHistory.objects.create(user=request.user, message=user_message, reply=special_reply)
         return JsonResponse({"reply": special_reply})
 
+    if intent_name == "view_cart" or is_cart_view_request(user_message):
+        clear_cart_confirmation(request)
+        reply = format_cart_reply(request)
+        if request.user.is_authenticated:
+            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        return JsonResponse({"reply": reply})
+
+    if intent_name == "remove_from_cart" or is_remove_from_cart_request(user_message):
+        reply = build_remove_from_cart_reply(request, user_message)
+        if request.user.is_authenticated:
+            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        return JsonResponse({"reply": reply})
+
     if intent_name == "more" or is_more_products_request(user_message):
+        clear_cart_confirmation(request)
         reply = build_more_products_reply(request, user_message, ai_intent)
         if request.user.is_authenticated:
             ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "similar" or is_similar_products_request(user_message):
+        clear_cart_confirmation(request)
         reply = build_similar_products_reply(request)
         if request.user.is_authenticated:
             ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "detail" or is_context_detail_request(user_message):
+        clear_cart_confirmation(request)
         reply = build_context_detail_reply(request, user_message)
         if request.user.is_authenticated:
             ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "add_to_cart" or is_add_to_cart_request(user_message):
+        clear_cart_confirmation(request)
         reply = build_add_to_cart_reply(request, select_product_for_cart(request, user_message))
         if request.user.is_authenticated:
             ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
         return JsonResponse({"reply": reply})
 
+    clear_cart_confirmation(request)
     products, filters = find_products_with_context(request, user_message, ai_intent=ai_intent)
     remember_products(request, products, message=user_message, filters=filters)
     fallback_reply = build_fallback_reply(products, filters)

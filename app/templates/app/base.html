@@ -557,10 +557,93 @@
         }
 
         @media (max-width: 560px) {
+            .navbar {
+                position: sticky;
+            }
+
+            .navbar > .container-fluid {
+                height: auto !important;
+                min-height: 70px;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 8px 12px;
+            }
+
+            .navbar-brand {
+                max-width: calc(100% - 64px);
+                white-space: normal;
+                line-height: 1.2;
+                font-size: 0.98rem;
+            }
+
+            .navbar-brand img {
+                width: 42px;
+                height: 42px;
+                flex: 0 0 auto;
+            }
+
+            .navbar-collapse {
+                width: 100%;
+                flex-basis: 100%;
+                background: rgba(255,255,255,0.96);
+                border-radius: 14px;
+                padding: 10px;
+                margin-top: 8px;
+            }
+
+            .cart-container {
+                font-size: 0.9rem;
+            }
+
+            .cart-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+            }
+
+            main.container {
+                width: 100%;
+                max-width: 100%;
+                margin-top: 12px !important;
+                padding: 10px !important;
+                border-radius: 0;
+            }
+
             .chat-widget-container {
-                width: calc(100% - 20px);
+                width: calc(100% - 16px);
                 right: 10px;
-                height: min(620px, calc(100vh - 120px));
+                left: 8px;
+                right: 8px;
+                bottom: 82px;
+                height: min(620px, calc(100dvh - 96px));
+                border-radius: 14px;
+            }
+
+            .chat-launcher {
+                right: 16px;
+                bottom: 16px;
+                width: 56px;
+                height: 56px;
+            }
+
+            .chat-messages {
+                padding: 14px;
+                gap: 10px;
+            }
+
+            .message {
+                max-width: 88%;
+                font-size: 0.95rem;
+            }
+
+            .chat-input {
+                padding: 10px;
+                gap: 6px;
+            }
+
+            #message-input {
+                min-width: 0;
+                font-size: 0.95rem;
             }
 
             .auth-grid {
