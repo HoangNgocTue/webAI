@@ -18,5 +18,8 @@ urlpatterns = [
     path('invoice/<int:id>/', views.invoice_detail, name='invoice_detail'),
     path('order-history/', views.order_history, name='order_history'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('profile/', views.profile, name='profile'),
+    path('about/', views.about, name='about'),
+    path('contact/', views.contact, name='contact'),
 ]
 

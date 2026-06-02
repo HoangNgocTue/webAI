@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import *
 import json
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 def detail(request):
@@ -446,3 +447,82 @@ def admin_dashboard(request):
     }
     
     return render(request, 'app/admin_dashboard.html', context)
+
+
+# ===================================================================
+# 👤 PROFILE - XEM VÀ SỬA THÔNG TIN TÀI KHOẢN
+# ===================================================================
+@login_required(login_url='login')
+def profile(request):
+    user = request.user
+    categories = Category.objects.filter(is_sub=False)
+    order, _ = Order.objects.get_or_create(customer=user, complete=False)
+    cartItems = order.get_cart_items
+    total_orders = Order.objects.filter(customer=user, complete=True).count()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_info':
+            user.first_name = request.POST.get('first_name', '').strip()
+            user.last_name  = request.POST.get('last_name', '').strip()
+            email = request.POST.get('email', '').strip()
+            if email:
+                user.email = email
+            user.save()
+            messages.success(request, 'Cập nhật thông tin thành công!')
+            return redirect('profile')
+
+        elif action == 'change_password':
+            form = PasswordChangeForm(user, request.POST)
+            if form.is_valid():
+                updated_user = form.save()
+                update_session_auth_hash(request, updated_user)
+                messages.success(request, 'Đổi mật khẩu thành công!')
+            else:
+                for field_errors in form.errors.values():
+                    for err in field_errors:
+                        messages.error(request, err)
+            return redirect('profile')
+
+    context = {
+        'categories': categories,
+        'cartItems': cartItems,
+        'user_login': 'show',
+        'user_not_login': 'hidden',
+        'total_orders': total_orders,
+    }
+    return render(request, 'app/profile.html', context)
+
+
+# ===================================================================
+# ℹ️ ABOUT & CONTACT - TRANG TĨNH
+# ===================================================================
+def about(request):
+    categories = Category.objects.filter(is_sub=False)
+    cartItems = 0
+    if request.user.is_authenticated:
+        order, _ = Order.objects.get_or_create(customer=request.user, complete=False)
+        cartItems = order.get_cart_items
+    context = {
+        'categories': categories,
+        'cartItems': cartItems,
+        'user_login': 'show' if request.user.is_authenticated else 'hidden',
+        'user_not_login': 'hidden' if request.user.is_authenticated else 'show',
+    }
+    return render(request, 'app/about.html', context)
+
+
+def contact(request):
+    categories = Category.objects.filter(is_sub=False)
+    cartItems = 0
+    if request.user.is_authenticated:
+        order, _ = Order.objects.get_or_create(customer=request.user, complete=False)
+        cartItems = order.get_cart_items
+    context = {
+        'categories': categories,
+        'cartItems': cartItems,
+        'user_login': 'show' if request.user.is_authenticated else 'hidden',
+        'user_not_login': 'hidden' if request.user.is_authenticated else 'show',
+    }
+    return render(request, 'app/contact.html', context)

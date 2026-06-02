@@ -218,10 +218,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'home' %}" style="color: #1a202c; font-weight: 500;">Trang chủ</a>
+                        <a class="nav-link" href="{% url 'home' %}" style="color:#1a202c;font-weight:500;">Trang chủ</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #1a202c; font-weight: 500;">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color:#1a202c;font-weight:500;">
                             Sản phẩm
                         </a>
                         <ul class="dropdown-menu">
@@ -229,6 +229,12 @@
                             <li><a class="dropdown-item" href="{% url 'category' %}?category={{category.slug}}">{{category.name}}</a></li>
                         {% endfor %}
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'about' %}" style="color:#1a202c;font-weight:500;">Giới thiệu</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'contact' %}" style="color:#1a202c;font-weight:500;">Liên hệ</a>
                     </li>
                 </ul>
                 <form class="d-flex" role="search" method="POST" action="{% url 'search' %}">
@@ -273,6 +279,7 @@
                         </div>
                     </div>
                     <hr>
+                    <a href="{% url 'profile' %}" class="account-dropdown__item">👤 Thông tin tài khoản</a>
                     <a href="{% url 'order_history' %}" class="account-dropdown__item">📋 Lịch sử đơn hàng</a>
                     <hr>
                     <a href="{% url 'logout' %}" class="account-dropdown__item account-dropdown__item--danger">🚪 Đăng xuất</a>
