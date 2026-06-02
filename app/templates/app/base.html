@@ -142,6 +142,62 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
 
+        /* ---- ACCOUNT DROPDOWN ---- */
+        .account-menu { position: relative; }
+        .account-trigger { cursor: pointer; }
+        .user-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: #4eaeb9; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+        .user-avatar--guest { background: #e2e8f0; color: #718096; }
+        .account-menu:hover .user-avatar {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(78,174,185,0.45);
+        }
+        .account-dropdown {
+            position: absolute; top: calc(100% + 14px); right: 0;
+            width: 230px; background: white; border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+            padding: 8px; z-index: 1100;
+            opacity: 0; visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+        }
+        .account-menu:hover .account-dropdown {
+            opacity: 1; visibility: visible; transform: translateY(0);
+        }
+        .account-dropdown__user {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+        }
+        .account-dropdown__avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: linear-gradient(135deg,#4eaeb9,#3d8fa3);
+            color: white; display: flex; align-items: center;
+            justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0;
+        }
+        .account-dropdown__name { font-weight: 600; font-size: 0.9rem; color: #1a202c; }
+        .account-dropdown__email {
+            font-size: 0.72rem; color: #718096;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 148px;
+        }
+        .account-dropdown__item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 14px; border-radius: 8px;
+            text-decoration: none; color: #2d3748; font-size: 0.88rem;
+            transition: background 0.15s;
+        }
+        .account-dropdown__item:hover { background: #f0f4f8; color: #2d3748; }
+        .account-dropdown__item--danger { color: #e53e3e; }
+        .account-dropdown__item--danger:hover { background: #fff5f5; color: #e53e3e; }
+        .account-dropdown__guest {
+            padding: 12px 14px 6px; font-size: 0.85rem; color: #718096; line-height: 1.5;
+        }
+        .account-dropdown hr { margin: 6px 4px; border-color: #e2e8f0; }
+
         /* Vùng nhập liệu */
         .chat-input { display: flex; padding: 15px; border-top: 1px solid #ddd; }
         #message-input { flex-grow: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; font-size: 1rem; outline: none; }
@@ -181,28 +237,53 @@
                     <button class="btn btn-outline-success" style="border-radius: 35px; background: #4eaeb9; width: 90px; border: 1px solid #4eaeb9; color: #fff;" type="submit">Search</button>
                 </form>
             </div>
-            <div class="cart-container my-2 my-lg-0" style="visibility: {{user_login}}">
-                <span style="color: #1a202c; font-weight: 500;">Tài Khoản: {{request.user}}</span>
-                {% if request.user.is_staff %}<a href="{% url 'admin_dashboard' %}" style="color: #3d8fa3; text-decoration: none; margin-left: 15px; padding: 8px 15px; background: #e6f4f7; border-radius: 8px; font-weight: bold;">📊 Dashboard</a>{% endif %}
-                <span style="margin-left: 10px;"><a href="{% url 'logout' %}" style="color: #e53e3e; text-decoration: none; font-weight: 500;">Đăng xuất</a></span>
-            </div>
-            <div class="cart-container my-2 my-lg-0" style="visibility: {{user_not_login}}">
-                <a class="nav-link" href="{% url 'login' %}" style="color: #3d8fa3; font-weight: 500;">Đăng nhập</a>
-                <a class="nav-link" href="{% url 'register' %}" style="color: #3d8fa3; font-weight: 500;">Đăng ký</a>
-            </div>
-            <div class="cart-container my-2 my-lg-0" style="margin-left: 10px;">
+            <!-- Cart Icon -->
+            <div class="cart-container my-2 my-lg-0" style="margin-left: 16px;">
                 <a href="{% url 'cart' %}">
                     <div class="cart-icon">
-                        <span class="cart-count" style="color: #1a202c; text-decoration: none;"></span>
-                        <img id="cart-icon" src="{% static 'images/cart.png' %}" width="40" height="40">
+                        <span class="cart-count"></span>
+                        <img id="cart-icon" src="{% static 'images/cart.png' %}" width="36" height="36">
                     </div>
                 </a>
             </div>
-            <div>
-                <div class="nav-item list-unstyled" style="margin-left: 20px; border: 1px solid #4eaeb9; border-radius: 8px;">
-                    <a class="nav-link d-flex align-items-center" href="{% url 'order_history' %}" style="color: #3d8fa3; font-weight: 500;">
-                        Lịch Sử Giao dịch
-                    </a>
+
+            <!-- Account Icon + Hover Dropdown -->
+            <div class="account-menu ms-3">
+                <div class="account-trigger">
+                    {% if request.user.is_authenticated %}
+                    <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+                    {% else %}
+                    <div class="user-avatar user-avatar--guest">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.029 10 8 10c-2.029 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="account-dropdown">
+                    {% if request.user.is_authenticated %}
+                    <div class="account-dropdown__user">
+                        <div class="account-dropdown__avatar">{{ request.user.username|first|upper }}</div>
+                        <div style="overflow:hidden;">
+                            <div class="account-dropdown__name">{{ request.user.username }}</div>
+                            {% if request.user.email %}
+                            <div class="account-dropdown__email">{{ request.user.email }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <hr>
+                    {% if request.user.is_staff %}
+                    <a href="{% url 'admin_dashboard' %}" class="account-dropdown__item">📊 Dashboard</a>
+                    {% endif %}
+                    <a href="{% url 'order_history' %}" class="account-dropdown__item">📋 Lịch sử đơn hàng</a>
+                    <hr>
+                    <a href="{% url 'logout' %}" class="account-dropdown__item account-dropdown__item--danger">🚪 Đăng xuất</a>
+                    {% else %}
+                    <p class="account-dropdown__guest">Chào mừng bạn đến<br><strong>Đà Nẵng Store!</strong></p>
+                    <a href="{% url 'login' %}" class="account-dropdown__item">🔑 Đăng nhập</a>
+                    <a href="{% url 'register' %}" class="account-dropdown__item">📝 Đăng ký tài khoản</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
