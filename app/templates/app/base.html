@@ -273,9 +273,6 @@
                         </div>
                     </div>
                     <hr>
-                    {% if request.user.is_staff %}
-                    <a href="{% url 'admin_dashboard' %}" class="account-dropdown__item">📊 Dashboard</a>
-                    {% endif %}
                     <a href="{% url 'order_history' %}" class="account-dropdown__item">📋 Lịch sử đơn hàng</a>
                     <hr>
                     <a href="{% url 'logout' %}" class="account-dropdown__item account-dropdown__item--danger">🚪 Đăng xuất</a>
