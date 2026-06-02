@@ -26,17 +26,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
-        /* Fix Navbar at the top */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 999; /* Z-index thấp hơn chatbot */
-        }
-        main {
-            margin-top: 100px;
-        }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
 
         /* --- CSS CHO CHATBOT --- */
         :root {
@@ -142,62 +132,6 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
 
-        /* ---- ACCOUNT DROPDOWN ---- */
-        .account-menu { position: relative; }
-        .account-trigger { cursor: pointer; }
-        .user-avatar {
-            width: 38px; height: 38px; border-radius: 50%;
-            background: #4eaeb9; color: white;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            user-select: none;
-        }
-        .user-avatar--guest { background: #e2e8f0; color: #718096; }
-        .account-menu:hover .user-avatar {
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(78,174,185,0.45);
-        }
-        .account-dropdown {
-            position: absolute; top: calc(100% + 14px); right: 0;
-            width: 230px; background: white; border-radius: 14px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-            padding: 8px; z-index: 1100;
-            opacity: 0; visibility: hidden;
-            transform: translateY(-10px);
-            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-        }
-        .account-menu:hover .account-dropdown {
-            opacity: 1; visibility: visible; transform: translateY(0);
-        }
-        .account-dropdown__user {
-            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-        }
-        .account-dropdown__avatar {
-            width: 42px; height: 42px; border-radius: 50%;
-            background: linear-gradient(135deg,#4eaeb9,#3d8fa3);
-            color: white; display: flex; align-items: center;
-            justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0;
-        }
-        .account-dropdown__name { font-weight: 600; font-size: 0.9rem; color: #1a202c; }
-        .account-dropdown__email {
-            font-size: 0.72rem; color: #718096;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 148px;
-        }
-        .account-dropdown__item {
-            display: flex; align-items: center; gap: 8px;
-            padding: 10px 14px; border-radius: 8px;
-            text-decoration: none; color: #2d3748; font-size: 0.88rem;
-            transition: background 0.15s;
-        }
-        .account-dropdown__item:hover { background: #f0f4f8; color: #2d3748; }
-        .account-dropdown__item--danger { color: #e53e3e; }
-        .account-dropdown__item--danger:hover { background: #fff5f5; color: #e53e3e; }
-        .account-dropdown__guest {
-            padding: 12px 14px 6px; font-size: 0.85rem; color: #718096; line-height: 1.5;
-        }
-        .account-dropdown hr { margin: 6px 4px; border-color: #e2e8f0; }
-
         /* Vùng nhập liệu */
         .chat-input { display: flex; padding: 15px; border-top: 1px solid #ddd; }
         #message-input { flex-grow: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; font-size: 1rem; outline: none; }
@@ -205,56 +139,53 @@
         #send-button svg { width: 24px; height: 24px; fill: var(--chatbot-primary); }
     </style>
 </head>
-<body style="font-family: 'Inter', sans-serif;">
-    <nav class="navbar navbar-expand-lg" style="background: white; border-bottom: 2px solid #4eaeb9; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
-        <div class="container-fluid" style="background: white; border-radius: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); height: 70px;">
-            <a class="navbar-brand navbar-brand-text" href="{% url 'home' %}" style="color: #3d8fa3; font-weight: 700; font-size: 1.2rem;">
-                <img src="{% static 'app/images/Logo_dhktdn.png' %}" width="50" height="50" alt="Logo" style="margin-right: 8px;">
-                Đà Nẵng Store
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}" style="color:#1a202c;font-weight:500;">Trang chủ</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color:#1a202c;font-weight:500;">
-                            Sản phẩm
-                        </a>
-                        <ul class="dropdown-menu">
-                        {% for category in categories %}
-                            <li><a class="dropdown-item" href="{% url 'category' %}?category={{category.slug}}">{{category.name}}</a></li>
-                        {% endfor %}
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'about' %}" style="color:#1a202c;font-weight:500;">Giới thiệu</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'contact' %}" style="color:#1a202c;font-weight:500;">Liên hệ</a>
-                    </li>
-                </ul>
-                <form class="d-flex" role="search" method="POST" action="{% url 'search' %}">
-                    {% csrf_token %}
-                    <input class="form-control me-2" type="search" placeholder="Tìm kiếm" aria-label="Search" name="searched" style="border-radius: 35px;">
-                    <button class="btn btn-outline-success" style="border-radius: 35px; background: #4eaeb9; width: 90px; border: 1px solid #4eaeb9; color: #fff;" type="submit">Search</button>
-                </form>
-            </div>
-            <!-- Cart Icon -->
-            <div class="cart-container my-2 my-lg-0" style="margin-left: 16px;">
+<body>
+
+<!-- 1. TOPBAR -->
+<div class="topbar" style="position:fixed;top:0;left:0;width:100%;z-index:1000;">
+    <div style="max-width:1400px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;height:36px;">
+        <div class="topbar-promo">
+            🚚 Miễn phí giao hàng đơn từ 1 triệu &nbsp;|&nbsp; 🛡️ Bảo hành 12 tháng &nbsp;|&nbsp; 🔄 Đổi trả 7 ngày
+        </div>
+        <div style="font-size:0.82rem;color:#7dd3fc;">
+            📞 Hotline: <strong style="color:white;">0905 123 456</strong>
+        </div>
+    </div>
+</div>
+
+<!-- 2. MAIN HEADER -->
+<header class="main-header">
+    <div class="header-inner">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" class="header-logo">
+            <img src="{% static 'app/images/Logo_dhktdn.png' %}" width="44" height="44" alt="Logo">
+            <span class="header-logo-text">Đà Nẵng<br><span style="font-size:0.75rem;opacity:0.85;font-weight:400;">Store</span></span>
+        </a>
+
+        <!-- Search -->
+        <div class="header-search">
+            <form method="POST" action="{% url 'search' %}" style="display:flex;width:100%;">
+                {% csrf_token %}
+                <input type="search" name="searched" placeholder="Tìm kiếm laptop, điện thoại, phụ kiện...">
+                <button type="submit">🔍 Tìm</button>
+            </form>
+        </div>
+
+        <!-- Actions -->
+        <div class="header-actions">
+            <!-- Cart -->
+            <div class="header-cart">
                 <a href="{% url 'cart' %}">
-                    <div class="cart-icon">
-                        <span class="cart-count"></span>
-                        <img id="cart-icon" src="{% static 'images/cart.png' %}" width="36" height="36">
+                    <div style="position:relative;display:inline-block;">
+                        <img id="cart-icon" src="{% static 'images/cart.png' %}" width="32" height="32" style="filter:brightness(10);">
+                        <span class="cart-count cart-badge"></span>
                     </div>
+                    <span class="header-cart-text">Giỏ hàng</span>
                 </a>
             </div>
 
-            <!-- Account Icon + Hover Dropdown -->
-            <div class="account-menu ms-3">
+            <!-- Account dropdown -->
+            <div class="account-menu">
                 <div class="account-trigger">
                     {% if request.user.is_authenticated %}
                     <div class="user-avatar">{{ request.user.username|first|upper }}</div>
@@ -291,68 +222,90 @@
                 </div>
             </div>
         </div>
-    </nav>
+    </div>
+</header>
 
-    <main style="background: #f0f4f8; padding: 20px 20px 40px;" class="container mt-4">
-        {% block banner_slider %}{% endblock %}
-        {% block main-content %}
-        {% endblock %}
-        {% block cart_content %}{% endblock %}
-        {% block content_checkout %}{% endblock %}
-        {% block register %}{% endblock register %}
-        {% if user_login == "show" %}
+<!-- 3. CATEGORY NAV -->
+<nav class="cat-nav">
+    <div class="cat-nav-inner">
+        <a href="{% url 'home' %}" class="cat-nav-item">🏠 Trang chủ</a>
+        {% for category in categories %}
+        {% if category.name == 'Laptop' or category.slug == 'laptop' %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">💻 {{ category.name }}</a>
+        {% elif 'thoai' in category.name or 'phone' in category.slug %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">📱 {{ category.name }}</a>
+        {% elif 'linh' in category.name or 'pc' in category.slug %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">🔧 {{ category.name }}</a>
+        {% elif 'phu' in category.name or 'accessory' in category.slug %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">🎧 {{ category.name }}</a>
+        {% else %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">📦 {{ category.name }}</a>
         {% endif %}
-    </main>
-
-    <footer class="footer-modern mt-5">
-        <div class="container">
-            <div class="row py-4">
-                <div class="col-md-4 mb-3">
-                    <h5>Đà Nẵng Store</h5>
-                    <p class="text-muted small">Cửa hàng công nghệ uy tín tại Đà Nẵng. Chuyên cung cấp laptop, điện thoại, linh kiện chính hãng.</p>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <h6>Chính sách</h6>
-                    <ul class="list-unstyled small text-muted">
-                        <li>✓ Bảo hành 12 tháng</li>
-                        <li>✓ Đổi trả 7 ngày</li>
-                        <li>✓ Miễn phí ship đơn trên 1 triệu</li>
-                    </ul>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <h6>Liên hệ</h6>
-                    <ul class="list-unstyled small text-muted">
-                        <li>📞 0905 123 456</li>
-                        <li>📍 123 Nguyễn Văn Linh, Đà Nẵng</li>
-                        <li>🕐 8:00 – 21:00 mỗi ngày</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-top pt-3 pb-2 text-center text-muted small">
-                © 2025 Đà Nẵng Store. All rights reserved.
-            </div>
-        </div>
-    </footer>
-
-    <div class="chat-launcher" id="chat-launcher">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
+        {% endfor %}
+        <a href="{% url 'about' %}" class="cat-nav-item">ℹ️ Giới thiệu</a>
+        <a href="{% url 'contact' %}" class="cat-nav-item">📞 Liên hệ</a>
     </div>
+</nav>
 
-    <div class="chat-widget-container" id="chat-widget">
-        <div class="chat-header">
-            <span>Đà Nẵng Store Assistant 🤖</span>
-            <button class="close-btn" id="close-chat">×</button>
+<main style="background:#f1f5f9;padding:20px 20px 40px;" class="container mt-4">
+    {% block banner_slider %}{% endblock %}
+    {% block main-content %}{% endblock %}
+    {% block cart_content %}{% endblock %}
+    {% block content_checkout %}{% endblock %}
+    {% block register %}{% endblock register %}
+</main>
+
+<footer class="footer-modern mt-5">
+    <div class="container">
+        <div class="row py-4">
+            <div class="col-md-4 mb-3">
+                <h5>Đà Nẵng Store</h5>
+                <p class="text-muted small">Cửa hàng công nghệ uy tín tại Đà Nẵng. Chuyên cung cấp laptop, điện thoại, linh kiện chính hãng.</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h6>Chính sách</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li>✓ Bảo hành 12 tháng</li>
+                    <li>✓ Đổi trả 7 ngày</li>
+                    <li>✓ Miễn phí ship đơn trên 1 triệu</li>
+                </ul>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h6>Liên hệ</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li>📞 0905 123 456</li>
+                    <li>📍 123 Nguyễn Văn Linh, Đà Nẵng</li>
+                    <li>🕐 8:00 – 21:00 mỗi ngày</li>
+                </ul>
+            </div>
         </div>
-        <div class="chat-messages" id="chatbox">
-            <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn...">
-            <button id="send-button">
-                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-            </button>
+        <div class="border-top pt-3 pb-2 text-center text-muted small">
+            © 2025 Đà Nẵng Store. All rights reserved.
         </div>
     </div>
+</footer>
+
+<!-- Chatbot launcher -->
+<div class="chat-launcher" id="chat-launcher">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
+</div>
+
+<!-- Chatbot widget -->
+<div class="chat-widget-container" id="chat-widget">
+    <div class="chat-header">
+        <span>Đà Nẵng Store Assistant 🤖</span>
+        <button class="close-btn" id="close-chat">×</button>
+    </div>
+    <div class="chat-messages" id="chatbox">
+        <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+    </div>
+    <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn...">
+        <button id="send-button">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+        </button>
+    </div>
+</div>
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
