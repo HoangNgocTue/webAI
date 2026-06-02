@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 import os
+import re
 import json
 
 from dotenv import load_dotenv
@@ -12,137 +13,162 @@ from chatbot.claude_client import get_claude_client
 from chatbot.models import SupportTicket
 
 
-# =============================================================
-# LOAD ENV
-# =============================================================
 load_dotenv()
 
+MAX_HISTORY = 10  # số tin nhắn tối đa lưu trong session (5 lượt hỏi-đáp)
+
 
 # =============================================================
-# FORMAT PRODUCT RESPONSE
+# FORMAT PRODUCT
 # =============================================================
-def format_products_for_response(products: list) -> str:
-
+def format_products_for_prompt(products) -> str:
     if not products:
-        return "Không tìm thấy sản phẩm phù hợp."
+        return "Hiện chưa có sản phẩm nào."
 
-    formatted = ""
-
-    for i, product in enumerate(products, 1):
-
+    lines = []
+    for p in products:
         try:
-            price_vnd = f"{int(product.price):,}".replace(",", ".")
-        except:
-            price_vnd = str(product.price)
+            price_vnd = f"{int(p.price):,}".replace(",", ".")
+        except Exception:
+            price_vnd = str(p.price)
 
-        categories = (
-            ", ".join([cat.name for cat in product.category.all()])
-            if product.category.exists()
-            else "Chưa phân loại"
+        cats = (
+            ", ".join(c.name for c in p.category.all())
+            if p.category.exists() else "Chưa phân loại"
         )
 
         specs = []
+        if getattr(p, "cpu", None):    specs.append(f"CPU: {p.cpu}")
+        if getattr(p, "gpu", None):    specs.append(f"GPU: {p.gpu}")
+        if getattr(p, "ram", None):    specs.append(f"RAM: {p.ram}")
+        if getattr(p, "storage", None): specs.append(f"Lưu trữ: {p.storage}")
 
-        if getattr(product, "cpu", None):
-            specs.append(f"CPU: {product.cpu}")
+        specs_str = " | ".join(specs) if specs else "Không có thông số kỹ thuật"
 
-        if getattr(product, "gpu", None):
-            specs.append(f"GPU: {product.gpu}")
+        lines.append(
+            f"[ID:{p.id}] {p.name}\n"
+            f"  Giá: {price_vnd}đ | Danh mục: {cats}\n"
+            f"  {specs_str}\n"
+            f"  Link: /detail/?id={p.id}"
+        )
 
-        if getattr(product, "ram", None):
-            specs.append(f"RAM: {product.ram}")
-
-        if getattr(product, "storage", None):
-            specs.append(f"Storage: {product.storage}")
-
-        specs_str = " | ".join(specs) if specs else "Không có thông số"
-
-        formatted += f"""
-{i}. {product.name}
-- Giá: {price_vnd}đ
-- Danh mục: {categories}
-- Thông số: {specs_str}
-- Link: /detail/?id={product.id}
-
-"""
-
-    return formatted
+    return "\n\n".join(lines)
 
 
 # =============================================================
-# GET PRODUCT DATA
+# GET ALL PRODUCTS
 # =============================================================
-def get_product_data_for_prompt(limit: int = 5) -> str:
-
+def get_all_products_for_prompt() -> str:
     try:
-
-        products = Product.objects.all().order_by("id")[:limit]
-
-        if not products.exists():
-            return "Chưa có sản phẩm."
-
-        return format_products_for_response(list(products))
-
+        products = list(Product.objects.all().prefetch_related("category").order_by("id"))
+        if not products:
+            return "Hiện chưa có sản phẩm nào trong kho."
+        return format_products_for_prompt(products)
     except Exception as e:
-
-        print("Get Product Error:", e)
-
-        return "Không thể tải dữ liệu sản phẩm."
+        print("Product load error:", e)
+        return "Không thể tải danh sách sản phẩm."
 
 
 # =============================================================
 # SYSTEM PROMPT
 # =============================================================
-def get_base_prompt():
+def get_system_prompt() -> str:
+    product_data = get_all_products_for_prompt()
 
-    product_data = get_product_data_for_prompt()
+    return f"""Bạn là trợ lý bán hàng AI của **Đà Nẵng Store** — cửa hàng công nghệ tại Đà Nẵng.
+Tên bạn là **Dani**. Hãy trả lời bằng tiếng Việt, thân thiện, tự nhiên như nhân viên tư vấn thật sự.
 
-    return f"""
-Bạn là AI chatbot hỗ trợ khách hàng của Đà Nẵng Store.
-
-THÔNG TIN CỬA HÀNG:
-- Tên shop: Đà Nẵng Store
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+THÔNG TIN CỬA HÀNG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 - Hotline: 0905 123 456
 - Địa chỉ: 123 Nguyễn Văn Linh, Đà Nẵng
+- Giờ mở cửa: 8h–21h mỗi ngày
 
-CHÍNH SÁCH:
-- Bảo hành 12 tháng
-- Đổi trả 7 ngày
-- Miễn phí ship đơn trên 1 triệu
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHÍNH SÁCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Bảo hành: 12 tháng tại cửa hàng
+- Đổi trả: 7 ngày nếu sản phẩm lỗi do nhà sản xuất, còn nguyên hộp
+- Giao hàng: Miễn phí đơn từ 1.000.000đ trở lên, dưới 1 triệu tính phí theo khu vực
+- Thanh toán: Tiền mặt, chuyển khoản, thẻ ATM/tín dụng
 
-DANH SÁCH SẢN PHẨM:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOÀN BỘ SẢN PHẨM HIỆN CÓ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {product_data}
 
-PHÂN LOẠI YÊU CẦU HỖ TRỢ:
-Khi khách hàng gặp sự cố hoặc báo lỗi, hãy xác định đây là yêu cầu hỗ trợ kỹ thuật và phân loại theo một trong các nhóm sau:
-- order_payment: Lỗi đặt hàng, lỗi thanh toán, không nhận được xác nhận đơn hàng
-- account: Không đăng nhập được, quên mật khẩu, không tạo được tài khoản
-- cart_product: Không thêm được vào giỏ, ảnh không hiển thị, thông số sản phẩm sai
-- delivery_warranty: Chưa nhận được hàng, yêu cầu đổi trả, yêu cầu bảo hành
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CÁCH TƯ VẤN SẢN PHẨM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Khi khách hỏi theo giá: lọc sản phẩm có giá phù hợp rồi gợi ý 2-3 máy tốt nhất
+- Khi khách hỏi theo nhu cầu (học, chơi game, văn phòng): giải thích ngắn tại sao máy đó phù hợp
+- Khi khách so sánh: nêu điểm khác biệt rõ ràng (giá, cấu hình, ưu/nhược)
+- Khi khách hỏi máy không có trong danh sách: thành thật nói shop chưa có, gợi ý máy tương tự
+- KHÔNG bịa thông tin, KHÔNG thêm sản phẩm không có trong danh sách trên
+- Khi gợi ý sản phẩm, luôn kèm link: /detail/?id=ID
 
-KHI PHÁT HIỆN YÊU CẦU HỖ TRỢ:
-Nếu khách đang gặp sự cố hoặc báo lỗi (không phải chỉ hỏi thông tin sản phẩm), hãy:
-1. Trả lời thân thiện, thể hiện sự đồng cảm
-2. Thêm dòng đặc biệt ở CUỐI phản hồi theo định dạng chính xác:
-   [SUPPORT_TICKET:category]
-   Trong đó category là một trong: order_payment, account, cart_product, delivery_warranty, other
+Ví dụ tư vấn tốt:
+  Khách: "laptop dưới 15 triệu dùng học"
+  Dani: "Bạn đang tìm laptop học tập dưới 15 triệu thì mình gợi ý:
+  1. [tên máy] - [giá] - phù hợp vì [lý do]
+  2. [tên máy] - [giá] - phù hợp vì [lý do]
+  Bạn ưu tiên máy nhẹ hay pin trâu hơn ạ?"
 
-Ví dụ nếu khách báo không đặt hàng được:
-"Rất tiếc khi bạn gặp khó khăn! ... [SUPPORT_TICKET:order_payment]"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NHẬN DIỆN YÊU CẦU HỖ TRỢ KỸ THUẬT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Khi khách gặp SỰ CỐ hoặc BÁO LỖI (không chỉ hỏi thông tin), hãy:
+1. Đồng cảm và hỏi thêm chi tiết nếu cần
+2. Đặt marker ở CUỐI phản hồi: [SUPPORT_TICKET:category]
 
-QUY TẮC CHUNG:
-- Chỉ trả lời dựa trên dữ liệu được cung cấp
-- Không tự bịa thông tin
-- Trả lời thân thiện, ngắn gọn
-- Nếu không biết thì nói chưa có thông tin
+Phân loại:
+- order_payment  → Không đặt được hàng, lỗi thanh toán, không nhận xác nhận đơn
+- account        → Không đăng nhập được, quên mật khẩu, không tạo được tài khoản
+- cart_product   → Không thêm được vào giỏ, ảnh lỗi, giá sai, trang bị trắng
+- delivery_warranty → Chưa nhận hàng, muốn đổi trả, yêu cầu bảo hành
+- other          → Sự cố khác không thuộc các nhóm trên
+
+Ví dụ:
+  Khách: "tôi thanh toán bị lỗi hoài"
+  Dani: "Ôi không, thật xin lỗi bạn vì sự bất tiện này! Bạn đang dùng hình thức thanh toán nào ạ (chuyển khoản, thẻ hay COD)? Mình sẽ tạo ticket để bộ phận kỹ thuật hỗ trợ bạn ngay. [SUPPORT_TICKET:order_payment]"
+
+  Khách: "ảnh sản phẩm không load được"
+  Dani: "Mình hiểu điều đó thật bất tiện! Bạn thử xóa cache trình duyệt xem có được không ạ? Mình cũng ghi nhận lại để kỹ thuật kiểm tra. [SUPPORT_TICKET:cart_product]"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUY TẮC GIAO TIẾP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Xưng "mình", gọi khách là "bạn"
+- Câu trả lời ngắn gọn, đúng trọng tâm (không viết dài dòng)
+- Dùng emoji vừa phải để thân thiện hơn
+- Nếu khách hỏi ngoài phạm vi shop: lịch sự từ chối và hướng về sản phẩm/dịch vụ
+- Khi không chắc: nói thật "mình chưa có thông tin này, bạn có thể gọi hotline 0905 123 456 để được hỗ trợ trực tiếp"
 """
+
+
+# =============================================================
+# CONVERSATION HISTORY (SESSION)
+# =============================================================
+def get_history(request) -> list:
+    return request.session.get("chat_history", [])
+
+
+def save_history(request, user_msg: str, assistant_msg: str):
+    history = get_history(request)
+    history.append({"role": "user", "content": user_msg})
+    history.append({"role": "assistant", "content": assistant_msg})
+    # Giữ tối đa MAX_HISTORY tin nhắn gần nhất
+    if len(history) > MAX_HISTORY:
+        history = history[-MAX_HISTORY:]
+    request.session["chat_history"] = history
+    request.session.modified = True
 
 
 # =============================================================
 # CHATBOT PAGE
 # =============================================================
 def chatbot_view(request):
-
     return render(request, "chatbot/chatbot.html")
 
 
@@ -155,22 +181,17 @@ def chatbot_api(request):
     if request.method != "POST":
         return JsonResponse({"reply": "Phương thức không hợp lệ"}, status=400)
 
-    # =========================================================
-    # READ MESSAGE
-    # =========================================================
     try:
         data = json.loads(request.body)
         user_message = data.get("message", "").strip()
-    except:
+    except Exception:
         user_message = (request.POST.get("message") or "").strip()
 
     if not user_message:
         return JsonResponse({"reply": "Vui lòng nhập tin nhắn."})
 
-    import re
-
     # =========================================================
-    # LUỒNG 1: Khách kiểm tra trạng thái ticket (TKT-XXXXXX)
+    # LUỒNG 1: Kiểm tra trạng thái ticket (TKT-XXXXXX)
     # =========================================================
     ticket_id_match = re.search(r'\bTKT-[A-F0-9]{6}\b', user_message.upper())
     if ticket_id_match:
@@ -192,7 +213,9 @@ def chatbot_api(request):
                 reply += f"- Ghi chú nhân viên: {ticket.staff_note}"
             return JsonResponse({"reply": reply})
         except SupportTicket.DoesNotExist:
-            return JsonResponse({"reply": f"❌ Không tìm thấy ticket **{ticket_id}**. Vui lòng kiểm tra lại mã."})
+            return JsonResponse({
+                "reply": f"❌ Không tìm thấy ticket **{ticket_id}**. Bạn kiểm tra lại mã ticket nhé."
+            })
 
     # =========================================================
     # LUỒNG 2: Khách cung cấp email cho ticket đang chờ
@@ -206,34 +229,37 @@ def chatbot_api(request):
             ticket.customer_email = email
             ticket.save()
             request.session.pop('pending_email_ticket', None)
-            return JsonResponse({
-                "reply": (
-                    f"✅ Đã lưu email **{email}** cho ticket **{pending_ticket_id}**.\n"
-                    f"Chúng tôi sẽ gửi thông báo khi ticket được xử lý."
-                )
-            })
+            reply = (
+                f"✅ Đã lưu email **{email}** cho ticket **{pending_ticket_id}**.\n"
+                f"Mình sẽ gửi thông báo ngay khi ticket được xử lý nhé! 😊"
+            )
+            return JsonResponse({"reply": reply})
         except SupportTicket.DoesNotExist:
             pass
 
     # =========================================================
-    # LUỒNG 3: Gọi Claude AI
+    # LUỒNG 3: Gọi Claude AI (có lịch sử hội thoại)
     # =========================================================
     client = get_claude_client()
     if not client:
         return JsonResponse({"reply": "⚠️ Chưa cấu hình ANTHROPIC_API_KEY."}, status=500)
 
-    base_prompt = get_base_prompt()
+    system_prompt = get_system_prompt()
+
+    # Ghép lịch sử + tin nhắn hiện tại
+    history = get_history(request)
+    messages = history + [{"role": "user", "content": user_message}]
 
     try:
         response = client.messages.create(
             model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"),
             max_tokens=1024,
-            system=base_prompt,
-            messages=[{"role": "user", "content": user_message}],
+            system=system_prompt,
+            messages=messages,
         )
         reply = response.content[0].text
 
-        # Tạo support ticket nếu AI phát hiện sự cố
+        # Xử lý support ticket nếu AI phát hiện sự cố
         ticket_info = None
         if "[SUPPORT_TICKET:" in reply:
             match = re.search(r'\[SUPPORT_TICKET:(\w+)\]', reply)
@@ -250,14 +276,16 @@ def chatbot_api(request):
                     "ticket_id": ticket.ticket_id,
                     "category": ticket.get_category_display(),
                 }
-                # Lưu vào session để nhận email ở tin nhắn tiếp theo
                 request.session['pending_email_ticket'] = ticket.ticket_id
                 reply = re.sub(r'\s*\[SUPPORT_TICKET:\w+\]', '', reply).strip()
                 reply += (
                     f"\n\n📋 Mã ticket của bạn: **{ticket.ticket_id}**\n"
                     f"Nếu muốn nhận thông báo qua email khi được xử lý, "
-                    f"hãy nhập địa chỉ email của bạn ngay bây giờ."
+                    f"hãy nhập địa chỉ email của bạn nhé."
                 )
+
+        # Lưu lịch sử hội thoại
+        save_history(request, user_message, reply)
 
         return JsonResponse({"reply": reply, "ticket": ticket_info})
 
