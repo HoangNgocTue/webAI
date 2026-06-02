@@ -1,0 +1,82 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Đăng ký tài khoản</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+</head>
+
+<body>
+    {% block register %}
+    <section class="vh-100 bg-image"
+        style="background-image: url('{% static "app/images/banner/bb3.jpg" %}');">
+        <div class="mask d-flex align-items-center h-100 gradient-custom-3">
+            <div class="container h-100">
+                <div class="row d-flex justify-content-end align-items-center h-100">
+                    <div class="col-12 col-md-6 col-lg-5 col-xl-4 ms-auto">
+                        <div class="card h-100" style="border-radius: 15px; width: 100%;">
+                            <div class="card-body p-5">
+                                <!-- Logo và tiêu đề -->
+                                <div class="d-flex align-items-center justify-content-center mb-4">
+                                  <img src="{% static 'app/images/Logo_dhktdn.png' %}" width="50" height="50" alt="Logo">
+                                    <h2 class="text-uppercase text-center mb-0 ms-3">Tạo tài khoản mới</h2>
+                                </div>
+
+                                <form method="POST">
+                                    {% csrf_token %}
+
+                                    <!-- Tên người dùng -->
+                                    <div class="mb-4">
+                                        <label class="form-label d-block" for="username">Tên người dùng</label>
+                                        <div data-mdb-input-init>
+                                            {{ form.username }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Mật khẩu -->
+                                    <div class="mb-4">
+                                        <label class="form-label d-block" for="password1">Mật khẩu của bạn</label>
+                                        <div data-mdb-input-init>
+                                            {{ form.password1 }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Xác nhận mật khẩu -->
+                                    <div class="mb-4">
+                                        <label class="form-label d-block" for="password2">Xác nhận mật khẩu</label>
+                                        <div data-mdb-input-init>
+                                            {{ form.password2 }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Nút Đăng ký -->
+                                    <div class="d-flex justify-content-center">
+                                        <button type="submit"
+                                            class="btn btn-success btn-block btn-lg gradient-custom-4 text-body">
+                                            Đăng ký
+                                        </button>
+                                    </div>
+
+                                    <!-- Đăng nhập -->
+                                    <p class="text-center text-muted mt-5 mb-0">
+                                        Đã có tài khoản? <a href="{% url 'login' %}" class="fw-bold text-body"><u>Đăng
+                                                nhập tại đây</u></a>
+                                    </p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    {% endblock register %}
+</body>
+
+</html>

@@ -1,0 +1,24 @@
+Products count: 17
+ID: 19 | Name: MacBook Air M3 2024 | Price: 27990000.00 | Color: silver | Detail: MacBook Air M3 thế hệ mới với hiệu năng AI vượt trội, thiết kế mỏng nhẹ đẳng cấp, màn hình Liquid Retina sắc nét và thời lượng pin lên đến 18 tiếng. | Cats: ['Laptop']
+ID: 20 | Name: MacBook Pro M3 Pro 14 inch | Price: 49990000.00 | Color: space_gray | Detail: Dành cho người dùng chuyên nghiệp. Chip M3 Pro cực mạnh, màn hình Liquid Retina XDR 120Hz Liquid Motion siêu đẹp, màu xám không gian sang trọng. | Cats: ['Laptop']
+ID: 21 | Name: ASUS ROG Strix G16 Gaming | Price: 34990000.00 | Color: black | Detail: Quái thú gaming đích thực. Trải nghiệm chiến game đỉnh cao cùng màn hình 16 inch 165Hz và hiệu năng đồ họa RTX thế hệ mới. | Cats: ['Laptop']
+ID: 22 | Name: HP Pavilion 14 | Price: 14500000.00 | Color: white | Detail: Laptop văn phòng thanh lịch, mỏng nhẹ, vỏ nhôm nguyên khối màu trắng bạc cao cấp. Hiệu năng ổn định cho mọi tác vụ học tập và làm việc. | Cats: ['Laptop']
+ID: 23 | Name: Laptop Lenovo IdeaPad 3 (Cũ giá rẻ) | Price: 4800000.00 | Color: gray | Detail: Laptop học sinh sinh viên giá rẻ, hoạt động mượt mà các tác vụ văn phòng cơ bản Word, Excel, lướt web học online. | Cats: ['Laptop']
+ID: 24 | Name: iPhone 15 Pro Max Titanium | Price: 29990000.00 | Color: gray | Detail: Đỉnh cao công nghệ Apple. Khung vỏ Titanium siêu bền nhẹ, nút Action thông minh, camera zoom quang học 5x sắc nét và chip A17 Pro siêu mạnh mẽ. | Cats: ['Điện thoại']
+ID: 25 | Name: Samsung Galaxy S24 Ultra | Price: 26990000.00 | Color: black | Detail: Kỷ nguyên AI di động đã tới. Bút S-Pen quyền năng, khung viền Titanium, camera siêu độ phân giải 200MP và hiệu năng cực khủng chip Snapdragon 8 Gen 3. | Cats: ['Điện thoại']
+ID: 26 | Name: Xiaomi Redmi Note 13 | Price: 4290000.00 | Color: blue | Detail: Vua phân khúc giá rẻ. Màn hình AMOLED 120Hz siêu mượt, camera 108MP chụp ảnh đỉnh cao, pin lớn 5000mAh kèm sạc nhanh 33W. | Cats: ['Điện thoại']
+ID: 27 | Name: Samsung Galaxy A25 5G | Price: 5490000.00 | Color: yellow | Detail: Điện thoại tầm trung đáng mua nhất của Samsung. Màn hình Super AMOLED 120Hz sắc nét, kết nối 5G siêu tốc, camera chống rung OIS cực tốt. | Cats: ['Điện thoại']
+ID: 28 | Name: Card màn hình ASUS ROG Strix RTX 4070 O12G | Price: 20990000.00 | Color: black | Detail: Card đồ họa cao cấp của ASUS. Công nghệ DLSS 3, Ray Tracing thế hệ thứ 3 siêu đỉnh, hệ thống tản nhiệt 3 quạt siêu mát, LED RGB lộng lẫy. | Cats: ['Linh kiện PC']
+ID: 29 | Name: Card màn hình MSI Gaming X RTX 3060 12G | Price: 8200000.00 | Color: black | Detail: Card đồ họa quốc dân dành cho game thủ Full HD và 2K. Vận hành mát mẻ, hiệu năng đỉnh trong tầm giá. | Cats: ['Linh kiện PC']
+ID: 30 | Name: CPU Intel Core i9-14900K | Price: 14900000.00 | Color: blue | Detail: Bộ vi xử lý máy tính mạnh mẽ hàng đầu hiện nay. Đạt xung nhịp tối đa lên tới 6.0GHz, lý tưởng cho đồ họa chuyên nghiệp và gaming đỉnh cao. | Cats: ['Linh kiện PC']
+ID: 31 | Name: CPU AMD Ryzen 5 7600 | Price: 5100000.00 | Color: gray | Detail: Bộ vi xử lý phân khúc tầm trung xuất sắc của AMD sử dụng socket AM5 mới nhất, tiết kiệm điện năng, hiệu năng chơi game cực tốt. | Cats: ['Linh kiện PC']
+ID: 32 | Name: Ổ cứng SSD Samsung 990 Pro 1TB M.2 PCIe Gen 4 | Price: 2850000.00 | Color: black | Detail: Ổ cứng SSD M.2 tốc độ đọc ghi khủng 7450/6900 MB/s, độ bền cao vượt trội, tốt nhất cho khởi động Win và lưu game. | Cats: ['Linh kiện PC']
+ID: 33 | Name: Tai nghe chống ồn Sony WH-1000XM5 | Price: 6990000.00 | Color: white | Detail: Tai nghe chụp tai chống ồn hàng đầu thế giới. Thiết kế sang trọng màu trắng bạc lịch lãm, âm thanh Hi-Res chất lượng đỉnh cao và thời lượng pin 30 tiếng. | Cats: ['Phụ kiện']
+ID: 34 | Name: Bàn phím cơ không dây Keychron K2 Pro | Price: 2450000.00 | Color: gray | Detail: Bàn phím cơ bố cục 75% gọn gàng, hỗ trợ QMK/VIA để tùy chỉnh phím, kết nối 3 thiết bị cùng lúc, switch gõ siêu êm ái. | Cats: ['Phụ kiện']
+ID: 35 | Name: Chuột Gaming không dây Logitech G502 LightSpeed | Price: 2890000.00 | Color: black | Detail: Chuột chơi game huyền thoại của Logitech. Cảm biến HERO 25K chính xác từng pixel, 11 nút lập trình được và thiết kế công thái học cực ôm tay. | Cats: ['Phụ kiện']
+
+Categories count: 4
+ID: 8 | Name: Laptop | Slug: laptop | Is Sub: False
+ID: 9 | Name: Điện thoại | Slug: dien-thoai | Is Sub: False
+ID: 10 | Name: Linh kiện PC | Slug: linh-kien-pc | Is Sub: False
+ID: 11 | Name: Phụ kiện | Slug: phu-kien | Is Sub: False
