@@ -1136,10 +1136,10 @@ def build_context_detail_reply(request, message: str) -> str:
     remember_products(request, [product], filters={"detail_product": product.id})
     return (
         f"Thông tin **{product.name}**:\n\n"
+        f"<!--PRODUCT:{product.id}-->\n"
         f"- Giá: {price_vnd}đ\n"
         f"- Danh mục: {categories}\n"
         f"- {' | '.join(specs)}\n"
-        f"<!--PRODUCT:{product.id}-->\n\n"
         "Nếu muốn mua, bạn nhắn **thêm sản phẩm này vào giỏ hàng**."
     )
 
@@ -1260,10 +1260,10 @@ def format_products_for_response(products: list) -> str:
         ]
         rows.append(
             f"{index}. {product.name}\n"
+            f"<!--PRODUCT:{product.id}-->\n"
             f"- Giá: {price_vnd}đ\n"
             f"- Danh mục: {categories}\n"
-            f"- Thông số: {' | '.join(specs)}\n"
-            f"<!--PRODUCT:{product.id}-->"
+            f"- Thông số: {' | '.join(specs)}"
         )
 
     return "\n\n".join(rows)
@@ -1275,15 +1275,18 @@ def ensure_product_markers(reply: str, products: list) -> str:
         return reply
 
     existing_ids = {int(match.group(1)) for match in PRODUCT_MARKER_RE.finditer(reply)}
-    missing_markers = [
-        f"<!--PRODUCT:{product.id}-->"
-        for product in products
-        if product.id not in existing_ids
-    ]
-    if not missing_markers:
-        return reply
+    for product in products:
+        if product.id in existing_ids:
+            continue
 
-    return f"{reply}\n\n{''.join(missing_markers)}"
+        marker = f"<!--PRODUCT:{product.id}-->"
+        name_pattern = re.compile(re.escape(product.name), re.IGNORECASE)
+        if name_pattern.search(reply):
+            reply = name_pattern.sub(lambda match: f"{match.group(0)}\n{marker}", reply, count=1)
+        else:
+            reply = f"{reply}\n\n{marker}"
+
+    return reply
 
 
 def get_recent_history(request, limit: int = 5) -> str:
@@ -1341,7 +1344,7 @@ Danh sách sản phẩm đã được truy vấn từ database:
 Quy tắc trả lời:
 - Chỉ tư vấn dựa trên danh sách sản phẩm ở trên.
 - Không hiển thị link hoặc nút xem chi tiết trong phần trả lời.
-- Giữ marker ẩn <!--PRODUCT:X--> cho sản phẩm được đề xuất để hệ thống tự hiện ảnh bên dưới.
+- Giữ marker ẩn <!--PRODUCT:X--> ngay sau tên từng sản phẩm được đề xuất để hệ thống tự hiện ảnh bên dưới tên.
 - Nếu không có sản phẩm phù hợp, nói rõ và gợi ý khách nới tiêu chí.
 - Trả lời bằng tiếng Việt, ngắn gọn, thân thiện, chuyên nghiệp.
 """

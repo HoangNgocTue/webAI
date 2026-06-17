@@ -185,6 +185,30 @@
             font-weight: 800;
             margin-top: 2px;
         }
+        .chat-product-slot {
+            display: block;
+            margin: 8px 0 10px;
+        }
+        .chat-product-image-link {
+            display: inline-flex;
+            width: 92px;
+            height: 92px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid #dbe5ef;
+            padding: 6px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .chat-product-image-link:hover {
+            border-color: var(--chatbot-primary);
+            transform: translateY(-1px);
+        }
+        .chat-product-image-link img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
 
         .quick-prompts {
             display: flex;
@@ -557,7 +581,11 @@
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', type);
             if (type === 'bot') {
-                messageElement.innerHTML = marked.parse(message);
+                const messageWithSlots = message.replace(
+                    /<!--\s*PRODUCT:(\d+)\s*-->/g,
+                    '<span class="chat-product-slot" data-product-id="$1"></span>'
+                );
+                messageElement.innerHTML = marked.parse(messageWithSlots);
                 enhanceProductPreview(messageElement, message);
             } else {
                 messageElement.textContent = message;
@@ -581,17 +609,28 @@
                 if (!response.ok) return;
                 const data = await response.json();
                 (data.products || []).forEach(product => {
-                    const card = document.createElement('a');
-                    card.className = 'chat-product-card';
-                    card.href = product.url;
-                    card.innerHTML = `
+                    const imageLink = document.createElement('a');
+                    imageLink.className = 'chat-product-image-link';
+                    imageLink.href = product.url;
+                    imageLink.innerHTML = `
                         <img src="${escapeHtml(product.image || 'https://via.placeholder.com/80x80?text=No+Image')}" alt="">
-                        <div>
-                            <strong>${escapeHtml(product.name)}</strong>
-                            <span>${escapeHtml(product.price)}</span>
-                        </div>
                     `;
-                    messageElement.appendChild(card);
+                    const slot = messageElement.querySelector(`.chat-product-slot[data-product-id="${product.id}"]`);
+                    if (slot) {
+                        slot.appendChild(imageLink);
+                    } else {
+                        const card = document.createElement('a');
+                        card.className = 'chat-product-card';
+                        card.href = product.url;
+                        card.innerHTML = `
+                            <img src="${escapeHtml(product.image || 'https://via.placeholder.com/80x80?text=No+Image')}" alt="">
+                            <div>
+                                <strong>${escapeHtml(product.name)}</strong>
+                                <span>${escapeHtml(product.price)}</span>
+                            </div>
+                        `;
+                        messageElement.appendChild(card);
+                    }
                 });
                 scrollToBottom();
             } catch (error) {
