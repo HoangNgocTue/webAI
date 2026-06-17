@@ -32,6 +32,9 @@ async def login_post(request: Request, ctx: BaseContext = Depends(BaseContext)):
         user.last_login = datetime.utcnow()
         ctx.db.commit()
         if user.is_staff or user.is_superuser:
+            # Set cả session key của SQLAdmin để /admin/ nhận ra ngay
+            request.session["admin_user"] = user.username
+            request.session["admin_id"] = user.id
             return RedirectResponse("/admin/", status_code=302)
         return RedirectResponse(request.url_for("home"), status_code=302)
     return templates.TemplateResponse(request, "login.html", ctx.dict(error="Tên đăng nhập hoặc mật khẩu không đúng!"))
