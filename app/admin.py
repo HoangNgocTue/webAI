@@ -25,22 +25,7 @@ class OrderAdmin(admin.ModelAdmin):
     # Hành động duyệt đơn
     @admin.action(description='Duyệt các đơn hàng đã chọn')
     def approve_orders(self, request, queryset):
-        updated = 0
-        for order in queryset:
-            order.status = 'approved'
-            order.complete = True
-            order.approved_date = now()
-            if not order.transaction_id:
-                order.transaction_id = f"APPROVED-{order.id}-{int(order.approved_date.timestamp())}"
-            order.save()
-            Invoice.objects.update_or_create(
-                order=order,
-                defaults={
-                    "customer": order.customer,
-                    "total_amount": order.get_cart_total,
-                },
-            )
-            updated += 1
+        updated = queryset.update(status='approved', approved_date=now())  # Đặt trạng thái "approved"
         self.message_user(request, f'{updated} đơn hàng đã được duyệt.')
 
     # Hành động từ chối đơn
@@ -59,17 +44,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         return localtime(obj.date_added).strftime('%d-%m-%Y %H:%M:%S')
     get_local_date_added.short_description = 'Thời gian thêm vào'
 
-@admin.register(ShippingAddress)
-class ShippingAddressAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'order', 'address', 'city', 'state', 'mobile', 'get_local_date_added')
-    search_fields = ('customer__username', 'address', 'city', 'state', 'mobile', 'order__id')
-    list_filter = ('city', 'state', 'date_added')
-
-    def get_local_date_added(self, obj):
-        return localtime(obj.date_added).strftime('%d-%m-%Y %H:%M:%S')
-    get_local_date_added.short_description = 'Thời gian tạo'
-
-
 # Các model khác vẫn giữ nguyên
 admin.site.register(Product)
 admin.site.register(Category)
+admin.site.register(ShippingAddress)

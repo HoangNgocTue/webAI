@@ -1,166 +1,32 @@
 {% load static %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đà Nẵng Store - Tech & Gadgets</title>
-    
+    <title>Đà Nẵng Store</title>
+
     <script type="text/javascript">
         var csrftoken = "{{ csrf_token }}";
         var user = "{{ user.username }}" || "AnonymousUser";
     </script>
 
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    
+
     <link rel="stylesheet" type="text/css" href="{% static 'app/css/style.css' %}">
     <link href="{% static 'app/css/main.css' %}" rel="stylesheet">
     <link href="{% static 'app/css/all.min.css' %}" rel="stylesheet">
     <link href="{% static 'app/css/owl.carousel.min.css' %}" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
     <style>
-        :root {
-            --brand-red: #e60000;
-            --brand-red-dark: #c90000;
-            --brand-teal: #4eaeb9;
-            --ink: #111827;
-            --muted: #6b7280;
-            --surface: #ffffff;
-            --soft: #f4f7fb;
-        }
-
-        body {
-            background: #f6f8fb;
-            color: var(--ink);
-        }
-
-        .nav-link,
-        .navbar-brand,
-        .cart-container span,
-        .cart-container a,
-        .cart-icon {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        .nav-link svg,
-        .cart-container svg,
-        .cart-icon svg,
-        .navbar button svg {
-            width: 20px;
-            height: 20px;
-            stroke-width: 2.2;
-        }
-
-        .cart-icon {
-            width: 44px;
-            height: 44px;
-            justify-content: center;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.85);
-            color: #111827;
-        }
-
-        .site-footer {
-            margin-top: 48px;
-            background: #0f172a;
-            color: #e5e7eb;
-            border-top: 4px solid var(--brand-teal);
-        }
-
-        .footer-inner {
-            width: min(1280px, calc(100% - 32px));
-            margin: 0 auto;
-            padding: 34px 0;
-            display: grid;
-            grid-template-columns: minmax(260px, 1.4fr) repeat(3, minmax(160px, 1fr));
-            gap: 24px;
-        }
-
-        .footer-brand {
-            display: flex;
-            gap: 14px;
-            align-items: flex-start;
-        }
-
-        .footer-brand img {
-            width: 58px;
-            height: 58px;
-            border-radius: 16px;
-            background: #fff;
-            padding: 4px;
-        }
-
-        .footer-brand strong,
-        .footer-col h3 {
-            color: #fff;
-            font-weight: 900;
-        }
-
-        .footer-brand p {
-            margin: 8px 0 0;
-            color: #cbd5e1;
-            max-width: 420px;
-        }
-
-        .footer-col {
-            display: grid;
-            gap: 8px;
-            align-content: start;
-        }
-
-        .footer-col h3 {
-            font-size: 1rem;
-            margin: 0 0 6px;
-        }
-
-        .footer-col a,
-        .footer-col span {
-            color: #cbd5e1;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .footer-col a:hover {
-            color: #fff;
-        }
-
-        .footer-col svg {
-            width: 17px;
-            height: 17px;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            width: min(1280px, calc(100% - 32px));
-            margin: 0 auto;
-            padding: 16px 0;
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            color: #94a3b8;
-            font-size: 0.92rem;
-        }
-
-        /* Fix Navbar at the top */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 999; /* Z-index thấp hơn chatbot */
-        }
-        main {
-            margin-top: 100px;
-        }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
 
         /* --- CSS CHO CHATBOT --- */
         :root {
@@ -244,42 +110,22 @@
             line-height: 1;
         }
 
-        .chat-header-actions {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .chat-header-actions button {
-            width: 30px;
-            height: 30px;
-            border: 0;
-            border-radius: 10px;
-            display: inline-grid;
-            place-items: center;
-            background: rgba(255,255,255,0.16);
-            color: #fff;
-            cursor: pointer;
-        }
-
         /* Vùng tin nhắn */
         .chat-messages {
             flex-grow: 1;
             padding: 20px;
             overflow-y: auto;
-            overflow-x: hidden;
             display: flex;
             flex-direction: column;
             gap: 15px;
             background-color: #f5f5f5;
         }
-        .message { max-width: 80%; padding: 10px 15px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; overflow-wrap: anywhere; }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; }
         .message.user { background-color: var(--chatbot-primary); color: var(--chatbot-light); align-self: flex-end; border-bottom-right-radius: 4px; }
         .message.bot { background-color: #e4e6eb; color: var(--chatbot-dark); align-self: flex-start; border-bottom-left-radius: 4px; }
         .message.bot p { margin: 0; }
         .message.bot ul, .message.bot ol { margin: 5px 0 0 20px; padding: 0; }
-        .message.bot a { color: #075985; font-weight: 800; text-decoration: underline; word-break: break-word; }
-        
+
         .typing-indicator { align-self: flex-start; }
         .typing-indicator span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #aaa; margin: 0 2px; animation: bounce 1.2s infinite; }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
@@ -291,510 +137,175 @@
         #message-input { flex-grow: 1; border: 1px solid #ccc; border-radius: 20px; padding: 10px 15px; font-size: 1rem; outline: none; }
         #send-button { background: none; border: none; cursor: pointer; padding: 0 10px; }
         #send-button svg { width: 24px; height: 24px; fill: var(--chatbot-primary); }
-
-        .quick-prompts {
-            display: flex;
-            gap: 8px;
-            padding: 10px 15px 0;
-            overflow-x: auto;
-            background: #f5f5f5;
-        }
-
-        .quick-prompts button {
-            border: 1px solid #d7eef1;
-            background: #fff;
-            color: #267782;
-            border-radius: 999px;
-            padding: 7px 12px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-
-        .back-to-top {
-            position: fixed;
-            right: 24px;
-            bottom: 104px;
-            width: 48px;
-            height: 48px;
-            border: 0;
-            border-radius: 16px;
-            background: #111827;
-            color: #fff;
-            display: grid;
-            place-items: center;
-            box-shadow: 0 12px 28px rgba(17, 24, 39, 0.25);
-            z-index: 999;
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(10px);
-            transition: all 0.2s ease;
-        }
-
-        .back-to-top.show {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-
-        .auth-page {
-            min-height: calc(100vh - 150px);
-            display: flex;
-            align-items: center;
-            padding: 32px 0;
-            background:
-                linear-gradient(135deg, rgba(230, 0, 0, 0.9), rgba(78, 174, 185, 0.78)),
-                url("{% static 'app/images/banner/bb3.jpg' %}") center/cover;
-            border-radius: 24px;
-        }
-
-        .auth-shell {
-            width: min(1120px, calc(100% - 32px));
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 460px;
-            gap: 24px;
-            align-items: stretch;
-        }
-
-        .auth-panel {
-            border-radius: 24px;
-        }
-
-        .auth-copy {
-            color: #fff;
-            padding: 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            min-height: 560px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.32));
-            border: 1px solid rgba(255,255,255,0.24);
-        }
-
-        .auth-kicker {
-            width: fit-content;
-            padding: 8px 12px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.18);
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .auth-copy h1 {
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 16px;
-        }
-
-        .auth-copy p {
-            max-width: 560px;
-            font-size: 1.05rem;
-            color: rgba(255,255,255,0.88);
-        }
-
-        .auth-benefits {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .auth-benefits span {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 12px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.16);
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .auth-benefits svg,
-        .auth-input svg,
-        .auth-submit svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .auth-card {
-            background: rgba(255,255,255,0.96);
-            padding: 28px;
-            box-shadow: 0 24px 60px rgba(17, 24, 39, 0.22);
-            border: 1px solid rgba(255,255,255,0.55);
-        }
-
-        .auth-brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .auth-brand img {
-            width: 52px;
-            height: 52px;
-            border-radius: 16px;
-            background: #fff;
-            padding: 4px;
-            box-shadow: 0 8px 20px rgba(17, 24, 39, 0.12);
-        }
-
-        .auth-brand strong {
-            display: block;
-            font-size: 1.55rem;
-            line-height: 1.1;
-        }
-
-        .auth-brand span {
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .auth-form label {
-            display: block;
-            margin: 14px 0 7px;
-            color: #374151;
-            font-weight: 700;
-        }
-
-        .auth-input {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border: 1px solid #d9e1ea;
-            background: #fff;
-            border-radius: 16px;
-            padding: 0 14px;
-            min-height: 52px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .auth-input:focus-within {
-            border-color: var(--brand-red);
-            box-shadow: 0 0 0 4px rgba(230, 0, 0, 0.08);
-        }
-
-        .auth-input input {
-            width: 100%;
-            border: 0;
-            outline: 0;
-            min-width: 0;
-            font-size: 1rem;
-            background: transparent;
-        }
-
-        .toggle-password {
-            border: 0;
-            background: transparent;
-            color: #6b7280;
-            padding: 0;
-            display: grid;
-            place-items: center;
-        }
-
-        .auth-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .auth-submit {
-            width: 100%;
-            height: 54px;
-            border: 0;
-            border-radius: 16px;
-            margin-top: 22px;
-            color: #fff;
-            background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark));
-            font-weight: 800;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 12px 24px rgba(230, 0, 0, 0.25);
-        }
-
-        .auth-switch {
-            text-align: center;
-            margin: 22px 0 0;
-            color: var(--muted);
-        }
-
-        .auth-switch a {
-            color: var(--brand-red);
-            font-weight: 800;
-            text-decoration: none;
-        }
-
-        .auth-alert {
-            background: #fff1f2;
-            border: 1px solid #fecdd3;
-            color: #9f1239;
-            border-radius: 14px;
-            padding: 10px 12px;
-            margin-bottom: 14px;
-        }
-
-        .auth-alert p {
-            margin: 0;
-        }
-
-        @media (max-width: 900px) {
-            .auth-shell {
-                grid-template-columns: 1fr;
-            }
-
-            .auth-copy {
-                min-height: auto;
-                padding: 28px;
-            }
-
-            .footer-inner {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 560px) {
-            .navbar {
-                position: sticky;
-            }
-
-            .navbar > .container-fluid {
-                height: auto !important;
-                min-height: 70px;
-                align-items: flex-start;
-                gap: 8px;
-                padding: 8px 12px;
-            }
-
-            .navbar-brand {
-                max-width: calc(100% - 64px);
-                white-space: normal;
-                line-height: 1.2;
-                font-size: 0.98rem;
-            }
-
-            .navbar-brand img {
-                width: 42px;
-                height: 42px;
-                flex: 0 0 auto;
-            }
-
-            .navbar-collapse {
-                width: 100%;
-                flex-basis: 100%;
-                background: rgba(255,255,255,0.96);
-                border-radius: 14px;
-                padding: 10px;
-                margin-top: 8px;
-            }
-
-            .cart-container {
-                font-size: 0.9rem;
-            }
-
-            .cart-icon {
-                width: 40px;
-                height: 40px;
-                border-radius: 12px;
-            }
-
-            main.container {
-                width: 100%;
-                max-width: 100%;
-                margin-top: 12px !important;
-                padding: 10px !important;
-                border-radius: 0;
-            }
-
-            .chat-widget-container {
-                width: calc(100% - 16px);
-                right: 10px;
-                left: 8px;
-                right: 8px;
-                bottom: 82px;
-                height: min(620px, calc(100dvh - 96px));
-                border-radius: 14px;
-            }
-
-            .chat-launcher {
-                right: 16px;
-                bottom: 16px;
-                width: 56px;
-                height: 56px;
-            }
-
-            .chat-messages {
-                padding: 14px;
-                gap: 10px;
-            }
-
-            .message {
-                max-width: 88%;
-                font-size: 0.95rem;
-            }
-
-            .chat-input {
-                padding: 10px;
-                gap: 6px;
-            }
-
-            #message-input {
-                min-width: 0;
-                font-size: 0.95rem;
-            }
-
-            .auth-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .footer-inner,
-            .footer-bottom {
-                grid-template-columns: 1fr;
-                flex-direction: column;
-            }
-        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
-        <div style="background: #4eaeb9; height: 70px; border-radius: 20px;" class="container-fluid">
-            <a class="navbar-brand" href="{% url 'home' %}">
-                <img src="{% static 'app/images/Logo_dhktdn.png' %}" width="50" height="50" alt="Logo">
-                Đà Nẵng Store - Tech & Gadgets
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'home' %}"><i data-lucide="home"></i> Trang chủ</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i data-lucide="layout-grid"></i> Sản phẩm
-                        </a>
-                        <ul class="dropdown-menu">
-                        {% for category in categories %}
-                            <li><a class="dropdown-item" href="{% url 'category' %}?category={{category.slug}}">{{category.name}}</a></li>
-                        {% endfor %}
-                        </ul>
-                    </li>
-                </ul>
-                <form class="d-flex" role="search" method="POST" action="{% url 'search' %}">
-                    {% csrf_token %}
-                    <input class="form-control me-2" type="search" placeholder="Bạn muốn mua gì hôm nay?" aria-label="Search" name="searched" style="border-radius: 35px;">
-                    <button class="btn btn-outline-success" style="border-radius: 35px;background: #ffffff; width: 48px; border: 1px solid #d7eef1; color:#267782;" type="submit" aria-label="Tìm kiếm"><i data-lucide="search"></i></button>
-                </form>
-            </div>
-            <div class="cart-container my-2 my-lg-0" style="visibility: {{user_login}}">
-                <span><i data-lucide="user-round"></i> {{request.user}}</span>
-                {% if request.user.is_staff %}<a href="{% url 'admin_dashboard' %}" style="color:black; text-decoration: none; margin-left: 15px; padding: 8px 15px; background: #fff; border-radius: 8px; font-weight: bold;"><i data-lucide="bar-chart-3"></i> Dashboard</a>{% endif %}
-                <span><a href="{% url 'logout' %}" style="color:black; text-decoration: none;"><i data-lucide="log-out"></i> Đăng xuất</a></span>
-            </div>
-            <div class="cart-container my-2 my-lg-0" style="visibility: {{user_not_login}}">
-                <a class="nav-link" href="{% url 'login' %}"><i data-lucide="log-in"></i> Đăng nhập</a>
-                <a class="nav-link" href="{% url 'register' %}"><i data-lucide="user-plus"></i> Đăng ký</a>
-            </div>
-            <div class="cart-container my-2 my-lg-0">
+
+<!-- 1. TOPBAR -->
+<div class="topbar" style="position:fixed;top:0;left:0;width:100%;z-index:1000;">
+    <div style="max-width:1400px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;height:36px;">
+        <div class="topbar-promo">
+            🚚 Miễn phí giao hàng đơn từ 1 triệu &nbsp;|&nbsp; 🛡️ Bảo hành 12 tháng &nbsp;|&nbsp; 🔄 Đổi trả 7 ngày
+        </div>
+        <div style="font-size:0.82rem;color:#7dd3fc;">
+            📞 Hotline: <strong style="color:white;">0905 123 456</strong>
+        </div>
+    </div>
+</div>
+
+<!-- 2. MAIN HEADER -->
+<header class="main-header">
+    <div class="header-inner">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" class="header-logo">
+            <img src="{% static 'app/images/Logo_dhktdn.png' %}" width="44" height="44" alt="Logo">
+            <span class="header-logo-text">Đà Nẵng<br><span style="font-size:0.75rem;opacity:0.85;font-weight:400;">Store</span></span>
+        </a>
+
+        <!-- Search -->
+        <div class="header-search">
+            <form method="POST" action="{% url 'search' %}" style="display:flex;width:100%;">
+                {% csrf_token %}
+                <input type="search" name="searched" placeholder="Tìm kiếm laptop, điện thoại, phụ kiện...">
+                <button type="submit">🔍 Tìm</button>
+            </form>
+        </div>
+
+        <!-- Actions -->
+        <div class="header-actions">
+            <!-- Cart -->
+            <div class="header-cart">
                 <a href="{% url 'cart' %}">
-                    <div class="cart-icon">
-                        <span class="cart-count" style="color:black; text-decoration: none;"></span>
-                        <i data-lucide="shopping-cart"></i>
+                    <div style="position:relative;display:inline-block;">
+                        <img id="cart-icon" src="{% static 'images/cart.png' %}" width="32" height="32" style="filter:brightness(10);">
+                        <span class="cart-count cart-badge"></span>
                     </div>
+                    <span class="header-cart-text">Giỏ hàng</span>
                 </a>
             </div>
-            <div>
-                <div class="nav-item list-unstyled" style="margin-left:20px; border: 1px solid #7bc7af;">
-                    <a class="nav-link d-flex align-items-center" href="{% url 'order_history' %}">
-                        <i data-lucide="receipt-text"></i> Lịch sử giao dịch
-                    </a>
+
+            <!-- Account dropdown -->
+            <div class="account-menu">
+                <div class="account-trigger">
+                    {% if request.user.is_authenticated %}
+                    <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+                    {% else %}
+                    <div class="user-avatar user-avatar--guest">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.029 10 8 10c-2.029 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="account-dropdown">
+                    {% if request.user.is_authenticated %}
+                    <div class="account-dropdown__user">
+                        <div class="account-dropdown__avatar">{{ request.user.username|first|upper }}</div>
+                        <div style="overflow:hidden;">
+                            <div class="account-dropdown__name">{{ request.user.username }}</div>
+                            {% if request.user.email %}
+                            <div class="account-dropdown__email">{{ request.user.email }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <hr>
+                    <a href="{% url 'profile' %}" class="account-dropdown__item">👤 Thông tin tài khoản</a>
+                    <a href="{% url 'order_history' %}" class="account-dropdown__item">📋 Lịch sử đơn hàng</a>
+                    <hr>
+                    <a href="{% url 'logout' %}" class="account-dropdown__item account-dropdown__item--danger">🚪 Đăng xuất</a>
+                    {% else %}
+                    <p class="account-dropdown__guest">Chào mừng bạn đến<br><strong>Đà Nẵng Store!</strong></p>
+                    <a href="{% url 'login' %}" class="account-dropdown__item">🔑 Đăng nhập</a>
+                    <a href="{% url 'register' %}" class="account-dropdown__item">📝 Đăng ký tài khoản</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
-    </nav>
+    </div>
+</header>
 
-    <main style="background:#4eaeb9; padding: 20px;" class="container mt-4">
-        {% block banner_slider %}{% endblock %}
-        {% block main-content %}
-        {% endblock %}
-        {% block cart_content %}{% endblock %}
-        {% block content_checkout %}{% endblock %}
-        {% block register %}{% endblock register %}
-        {% if user_login == "show" %}
+<!-- 3. CATEGORY NAV -->
+<nav class="cat-nav">
+    <div class="cat-nav-inner">
+        <a href="{% url 'home' %}" class="cat-nav-item">🏠 Trang chủ</a>
+        {% for category in categories %}
+        {% if category.name == 'Laptop' or category.slug == 'laptop' %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">💻 {{ category.name }}</a>
+        {% elif 'thoai' in category.name or 'phone' in category.slug %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">📱 {{ category.name }}</a>
+        {% elif 'linh' in category.name or 'pc' in category.slug %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">🔧 {{ category.name }}</a>
+        {% elif 'phu' in category.name or 'accessory' in category.slug %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">🎧 {{ category.name }}</a>
+        {% else %}
+        <a href="{% url 'category' %}?category={{ category.slug }}" class="cat-nav-item">📦 {{ category.name }}</a>
         {% endif %}
-    </main>
-
-    <footer class="site-footer">
-        <div class="footer-inner">
-            <div class="footer-brand">
-                <img src="{% static 'app/images/Logo_dhktdn.png' %}" alt="Đà Nẵng Store">
-                <div>
-                    <strong>Đà Nẵng Store</strong>
-                    <p>Cửa hàng công nghệ uy tín tại Đà Nẵng, chuyên laptop, điện thoại, linh kiện PC và phụ kiện.</p>
-                </div>
-            </div>
-            <div class="footer-col">
-                <h3>Hỗ trợ</h3>
-                <a href="{% url 'order_history' %}">Tra cứu đơn hàng</a>
-                <a href="{% url 'cart' %}">Giỏ hàng</a>
-                <a href="{% url 'home' %}">Tiếp tục mua sắm</a>
-            </div>
-            <div class="footer-col">
-                <h3>Chính sách</h3>
-                <span>Bảo hành 12 tháng</span>
-                <span>Đổi trả 7 ngày</span>
-                <span>Miễn phí ship đơn trên 1 triệu</span>
-            </div>
-            <div class="footer-col">
-                <h3>Liên hệ</h3>
-                <span><i data-lucide="phone"></i> 0905 123 456</span>
-                <span><i data-lucide="map-pin"></i> 123 Nguyễn Văn Linh, Đà Nẵng</span>
-                <span><i data-lucide="clock-3"></i> 8:00 - 21:00 mỗi ngày</span>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <span>© 2026 Đà Nẵng Store - Tech & Gadgets</span>
-            <span>Website bán đồ công nghệ tích hợp AI Chatbot tư vấn</span>
-        </div>
-    </footer>
-
-    <button class="back-to-top" id="back-to-top" aria-label="Lên đầu trang">
-        <i data-lucide="chevrons-up"></i>
-    </button>
-
-    <div class="chat-launcher" id="chat-launcher">
-        <i data-lucide="message-circle"></i>
+        {% endfor %}
+        <a href="{% url 'about' %}" class="cat-nav-item">ℹ️ Giới thiệu</a>
+        <a href="{% url 'contact' %}" class="cat-nav-item">📞 Liên hệ</a>
     </div>
+</nav>
 
-    <div class="chat-widget-container" id="chat-widget">
-        <div class="chat-header">
-            <span>Đà Nẵng Store Assistant</span>
-            <div class="chat-header-actions">
-                <button type="button" id="reset-chat" title="Xóa lịch sử chat" aria-label="Xóa lịch sử chat">
-                    <i data-lucide="rotate-ccw"></i>
-                </button>
-                <button class="close-btn" id="close-chat" type="button">×</button>
+<main style="background:#f1f5f9;padding:20px 20px 40px;" class="container mt-4">
+    {% block banner_slider %}{% endblock %}
+    {% block main-content %}{% endblock %}
+    {% block cart_content %}{% endblock %}
+    {% block content_checkout %}{% endblock %}
+    {% block register %}{% endblock register %}
+</main>
+
+<footer class="footer-modern mt-5">
+    <div class="container">
+        <div class="row py-4">
+            <div class="col-md-4 mb-3">
+                <h5>Đà Nẵng Store</h5>
+                <p class="text-muted small">Cửa hàng công nghệ uy tín tại Đà Nẵng. Chuyên cung cấp laptop, điện thoại, linh kiện chính hãng.</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h6>Chính sách</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li>✓ Bảo hành 12 tháng</li>
+                    <li>✓ Đổi trả 7 ngày</li>
+                    <li>✓ Miễn phí ship đơn trên 1 triệu</li>
+                </ul>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h6>Liên hệ</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li>📞 0905 123 456</li>
+                    <li>📍 123 Nguyễn Văn Linh, Đà Nẵng</li>
+                    <li>🕐 8:00 – 21:00 mỗi ngày</li>
+                </ul>
             </div>
         </div>
-        <div class="chat-messages" id="chatbox">
-            <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
-        </div>
-        <div class="quick-prompts">
-            <button type="button" data-prompt="laptop dưới 15 triệu">Laptop dưới 15 triệu</button>
-            <button type="button" data-prompt="điện thoại tầm 5 triệu">Điện thoại tầm 5 triệu</button>
-            <button type="button" data-prompt="máy core i7 card RTX">Core i7 RTX</button>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn...">
-            <button id="send-button">
-                <i data-lucide="send-horizontal"></i>
-            </button>
+        <div class="border-top pt-3 pb-2 text-center text-muted small">
+            © 2025 Đà Nẵng Store. All rights reserved.
         </div>
     </div>
+</footer>
+
+<!-- Chatbot launcher -->
+<div class="chat-launcher" id="chat-launcher">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
+</div>
+
+<!-- Chatbot widget -->
+<div class="chat-widget-container" id="chat-widget">
+    <div class="chat-header">
+        <span>Đà Nẵng Store Assistant 🤖</span>
+        <button class="close-btn" id="close-chat">×</button>
+    </div>
+    <div class="chat-messages" id="chatbox">
+        <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+    </div>
+    <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn...">
+        <button id="send-button">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+        </button>
+    </div>
+</div>
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -804,7 +315,7 @@
     <script src="{% static 'app/js/myscript.js' %}"></script>
     <script src="{% static 'app/js/s3.js' %}"></script>
     <script src="{% static 'app/js/cart.js' %}"></script>
-    
+
     <script type="text/javascript">
         // Lấy cookie CSRF (giữ nguyên)
         function getCookie(name) {
@@ -826,23 +337,13 @@
         const chatLauncher = document.getElementById('chat-launcher');
         const chatWidget = document.getElementById('chat-widget');
         const closeChatBtn = document.getElementById('close-chat');
-        const resetChatBtn = document.getElementById('reset-chat');
         const chatbox = document.getElementById('chatbox');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const backToTop = document.getElementById('back-to-top');
-        const CHAT_HISTORY_KEY = 'danang_store_chat_history';
-        const DEFAULT_BOT_MESSAGE = 'Xin chào! Tôi có thể giúp gì cho bạn?';
-
-        if (isPageReload()) {
-            localStorage.removeItem(CHAT_HISTORY_KEY);
-        }
 
         // Mở/đóng chatbot
         chatLauncher.addEventListener('click', () => chatWidget.classList.toggle('show'));
         closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
-        resetChatBtn.addEventListener('click', resetChatHistory);
-        loadChatHistory();
 
         // Gửi tin nhắn
         sendButton.addEventListener('click', sendMessage);
@@ -853,41 +354,8 @@
             }
         });
 
-        document.querySelectorAll('.quick-prompts button').forEach((button) => {
-            button.addEventListener('click', () => {
-                messageInput.value = button.dataset.prompt;
-                messageInput.focus();
-                sendMessage();
-            });
-        });
-
-        document.querySelectorAll('.toggle-password').forEach((button) => {
-            button.addEventListener('click', () => {
-                const input = document.getElementById(button.dataset.target);
-                if (!input) return;
-                input.type = input.type === 'password' ? 'text' : 'password';
-                button.innerHTML = input.type === 'password'
-                    ? '<i data-lucide="eye"></i>'
-                    : '<i data-lucide="eye-off"></i>';
-                lucide.createIcons();
-            });
-        });
-
-        window.addEventListener('scroll', () => {
-            backToTop.classList.toggle('show', window.scrollY > 400);
-        });
-
-        backToTop.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
         function scrollToBottom() {
             chatbox.scrollTop = chatbox.scrollHeight;
-        }
-
-        function isPageReload() {
-            const navigation = performance.getEntriesByType('navigation')[0];
-            return navigation ? navigation.type === 'reload' : performance.navigation && performance.navigation.type === 1;
         }
 
         async function sendMessage() {
@@ -902,13 +370,13 @@
                 // SỬ DỤNG URL ĐÚNG CỦA BẠN
                 const response = await fetch('/chatbot/api/', { // <-- THAY ĐỔI URL TẠI ĐÂY NẾU CẦN
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                         'X-CSRFToken': getCookie('csrftoken') // Gửi CSRF token
                     },
                     body: `message=${encodeURIComponent(userMessage)}`
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -923,63 +391,16 @@
             }
         }
 
-        function appendMessage(message, type, persist = true) {
+        function appendMessage(message, type) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', type);
             if (type === 'bot') {
                 messageElement.innerHTML = marked.parse(message);
-                messageElement.querySelectorAll('a').forEach((link) => {
-                    const href = link.getAttribute('href') || '';
-                    if (href.startsWith('/')) {
-                        link.setAttribute('target', '_self');
-                    }
-                });
             } else {
                 messageElement.textContent = message;
             }
             chatbox.appendChild(messageElement);
-            if (persist) {
-                saveChatMessage(message, type);
-            }
             scrollToBottom();
-        }
-
-        function getSavedChatHistory() {
-            try {
-                const history = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || '[]');
-                return Array.isArray(history) ? history : [];
-            } catch (error) {
-                return [];
-            }
-        }
-
-        function saveChatMessage(message, type) {
-            const history = getSavedChatHistory();
-            history.push({ message, type });
-            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history.slice(-60)));
-        }
-
-        function loadChatHistory() {
-            const history = getSavedChatHistory();
-            chatbox.innerHTML = '';
-
-            if (!history.length) {
-                appendMessage(DEFAULT_BOT_MESSAGE, 'bot', false);
-                return;
-            }
-
-            history.forEach((item) => {
-                if (item && item.message && ['bot', 'user'].includes(item.type)) {
-                    appendMessage(item.message, item.type, false);
-                }
-            });
-        }
-
-        function resetChatHistory() {
-            localStorage.removeItem(CHAT_HISTORY_KEY);
-            chatbox.innerHTML = '';
-            appendMessage(DEFAULT_BOT_MESSAGE, 'bot', false);
-            messageInput.focus();
         }
 
         function showTypingIndicator() {
@@ -997,8 +418,6 @@
                 chatbox.removeChild(indicator);
             }
         }
-
-        lucide.createIcons();
     </script>
 </body>
 </html>

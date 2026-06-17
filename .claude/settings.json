@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\minhn\\\\Documents\\\\webAI-main\" -Force)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\minhn\\\\Documents\\\\webAI-main\" -Filter \"requirements*\" -File)",
+      "Bash(pip install *)",
+      "Bash(python manage.py check)",
+      "Bash(python manage.py runserver)",
+      "Bash(netstat -ano)",
+      "Bash(python -c ' *)",
+      "Bash(python manage.py makemigrations chatbot)",
+      "Bash(python manage.py migrate)"
+    ]
+  }
+}

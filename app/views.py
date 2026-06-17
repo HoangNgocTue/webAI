@@ -2,65 +2,10 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import *
 import json
-import unicodedata
-from django.db.models import Q
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
-
-def normalize_search_text(value):
-    value = unicodedata.normalize("NFD", value or "")
-    value = "".join(ch for ch in value if unicodedata.category(ch) != "Mn")
-    return value.lower().strip()
-
-
-def expand_search_terms(keyword):
-    normalized = normalize_search_text(keyword)
-    terms = {keyword.strip(), normalized}
-
-    synonyms = {
-        "may tinh": ["laptop", "notebook", "macbook", "máy tính xách tay"],
-        "laptop": ["may tinh", "máy tính", "notebook", "macbook"],
-        "dien thoai": ["phone", "iphone", "samsung", "xiaomi", "điện thoại"],
-        "linh kien": ["cpu", "gpu", "ram", "card", "pc", "linh kiện"],
-        "card do hoa": ["gpu", "vga", "rtx", "nvidia", "radeon", "card đồ họa"],
-        "o cung": ["storage", "ssd", "hdd", "512gb", "1tb", "ổ cứng"],
-        "chuot": ["mouse", "logitech", "chuột"],
-        "ban phim": ["keyboard", "keychron", "bàn phím"],
-        "tai nghe": ["headphone", "sony", "tai nghe"],
-        "ram": ["8gb", "16gb", "32gb", "memory"],
-    }
-
-    for key, values in synonyms.items():
-        if key in normalized:
-            terms.update(values)
-
-    for word in normalized.split():
-        if len(word) >= 2:
-            terms.add(word)
-
-    return [term for term in terms if term]
-
-
-def product_matches_terms(product, terms):
-    haystack = " ".join(
-        str(value or "")
-        for value in [
-            product.name,
-            product.detail,
-            product.cpu,
-            product.gpu,
-            product.ram,
-            product.storage,
-            product.color,
-            " ".join(category.name or "" for category in product.category.all()),
-            " ".join(category.slug or "" for category in product.category.all()),
-        ]
-    )
-    normalized_haystack = normalize_search_text(haystack)
-    normalized_terms = [normalize_search_text(term) for term in terms]
-    return any(term and term in normalized_haystack for term in normalized_terms)
 
 def detail(request):
     if request.user.is_authenticated:
@@ -134,34 +79,9 @@ def search(request):
     searched = ''  # Đảm bảo rằng searched luôn được định nghĩa
     keys = []  # Danh sách sản phẩm mặc định là rỗng
 
-    if request.method in ["POST", "GET"]:
-        searched = (request.POST.get("searched") or request.GET.get("searched") or "").strip()
-
-        if searched:
-            terms = expand_search_terms(searched)
-            query = Q()
-            for term in terms:
-                query |= (
-                    Q(name__icontains=term)
-                    | Q(detail__icontains=term)
-                    | Q(cpu__icontains=term)
-                    | Q(gpu__icontains=term)
-                    | Q(ram__icontains=term)
-                    | Q(storage__icontains=term)
-                    | Q(color__icontains=term)
-                    | Q(category__name__icontains=term)
-                    | Q(category__slug__icontains=term)
-                )
-
-            orm_matches = Product.objects.filter(query).prefetch_related("category").distinct()
-            normalized_matches = [
-                product
-                for product in Product.objects.prefetch_related("category").all()
-                if product_matches_terms(product, terms)
-            ]
-            merged = {product.id: product for product in orm_matches}
-            merged.update({product.id: product for product in normalized_matches})
-            keys = sorted(merged.values(), key=lambda product: product.price)
+    if request.method == "POST":
+        searched = request.POST["searched"]  # Lấy từ form tìm kiếm
+        keys = Product.objects.filter(name__icontains=searched)  # Lọc sản phẩm theo tên, không phân biệt chữ hoa chữ thường
 
     # Kiểm tra xem người dùng đã đăng nhập chưa
     if request.user.is_authenticated:
@@ -360,15 +280,11 @@ def updateItem(request):
 from django.shortcuts import render, redirect
 from django.utils.timezone import now, localtime
 from django.contrib import messages
-from .models import Order, OrderItem, Category, Invoice, ShippingAddress  # Đảm bảo Invoice đã được thêm
+from .models import Order, OrderItem, Category, Invoice  # Đảm bảo Invoice đã được thêm
 
 def checkout(request):
     # Kiểm tra nếu người dùng đã đăng nhập
     user = request.user if request.user.is_authenticated else None
-    if not user:
-        messages.warning(request, "Bạn cần đăng nhập để thanh toán!")
-        return redirect('login')
-
     user_not_login = "hidden" if user else "show"
     user_login = "show" if user else "hidden"
 
@@ -377,68 +293,29 @@ def checkout(request):
     order = None
     items = []
 
-    try:
-        order = Order.objects.get(customer=user, complete=False)
-        items = order.orderitem_set.select_related('product').all()
-        cartItems = order.get_cart_items
-    except Order.DoesNotExist:
-        messages.error(request, "Giỏ hàng của bạn trống!")
-        return redirect('cart')  # Nếu không có đơn hàng, chuyển về giỏ hàng
-
-    if cartItems <= 0:
-        messages.error(request, "Giỏ hàng của bạn trống!")
-        return redirect('cart')
+    if user:
+        try:
+            order = Order.objects.get(customer=user, complete=False)
+            items = order.orderitem_set.all()
+            cartItems = order.get_cart_items
+        except Order.DoesNotExist:
+            messages.error(request, "Giỏ hàng của bạn trống!")
+            return redirect('cart')  # Nếu không có đơn hàng, chuyển về giỏ hàng
 
     # Xử lý POST request khi người dùng bấm "Đặt hàng"
     if request.method == 'POST':
         if order:
-            full_name = (request.POST.get("name") or "").strip()
-            address = (request.POST.get("address") or "").strip()
-            city = (request.POST.get("city") or "").strip()
-            state = (request.POST.get("state") or "").strip()
-            mobile = (request.POST.get("mobile") or request.POST.get("zipcode") or "").strip()
-
-            if not address or not city or not mobile:
-                messages.error(request, "Vui lòng nhập đầy đủ địa chỉ, thành phố và số điện thoại.")
-                return redirect('checkout')
-
-            if full_name:
-                name_parts = full_name.split(maxsplit=1)
-                user.first_name = name_parts[0]
-                user.last_name = name_parts[1] if len(name_parts) > 1 else ""
-                user.save(update_fields=["first_name", "last_name"])
-
             current_time = localtime(now())
             order.date_order = current_time
             order.complete = True
-            order.status = 'pending'
-            order.transaction_id = f"ORDER-{order.id}-{int(current_time.timestamp())}"
             order.save()
 
-            ShippingAddress.objects.update_or_create(
-                order=order,
-                defaults={
-                    "customer": user,
-                    "address": address,
-                    "city": city,
-                    "state": state,
-                    "mobile": mobile,
-                },
-            )
-
-            for item in items:
-                if item.product:
-                    item.product.stock = max(item.product.stock - item.quantity, 0)
-                    item.product.save(update_fields=["stock"])
-
             # Tạo hóa đơn cho đơn hàng
-            invoice, created = Invoice.objects.update_or_create(
+            invoice = Invoice.objects.create(
                 order=order,
-                defaults={
-                    "invoice_date": current_time,
-                    "customer": user,
-                    "total_amount": order.get_cart_total,
-                },
+                invoice_date=current_time,
+                customer=user,
+                total_amount=order.get_cart_total
             )
             messages.success(
                 request,
@@ -471,25 +348,9 @@ from .models import Invoice
 def invoice_detail(request, id):
     # Sử dụng get_object_or_404 để đảm bảo nếu không tìm thấy hóa đơn sẽ trả về 404
     invoice = get_object_or_404(Invoice, id=id)
-
-    categories = Category.objects.filter(is_sub=False)
-    if request.user.is_authenticated:
-        order, created = Order.objects.get_or_create(customer=request.user, complete=False)
-        cartItems = order.get_cart_items
-        user_not_login = "hidden"
-        user_login = "show"
-    else:
-        cartItems = 0
-        user_not_login = "show"
-        user_login = "hidden"
-
-    return render(request, 'app/invoice_detail.html', {
-        'invoice': invoice,
-        'categories': categories,
-        'cartItems': cartItems,
-        'user_not_login': user_not_login,
-        'user_login': user_login,
-    })
+    
+    # Truyền đối tượng invoice vào template
+    return render(request, 'app/invoice_detail.html', {'invoice': invoice})
 
 
 
@@ -497,12 +358,7 @@ def invoice_detail(request, id):
 def order_history(request):
     if request.user.is_authenticated:
         user = request.user
-        if user.is_staff or user.is_superuser:
-            orders = Order.objects.filter(complete=True).select_related('customer').prefetch_related('orderitem_set__product').order_by('-date_order')
-            is_staff_history = True
-        else:
-            orders = Order.objects.filter(customer=user, complete=True).select_related('customer').prefetch_related('orderitem_set__product').order_by('-date_order')
-            is_staff_history = False
+        orders = Order.objects.filter(customer=user, complete=True).order_by('-date_order')
         categories = Category.objects.filter(is_sub=False)
         user_not_login = "hidden"
         user_login = "show"
@@ -510,39 +366,18 @@ def order_history(request):
         messages.warning(request, "Bạn cần đăng nhập để xem lịch sử đơn hàng!")
         return redirect('login')
 
-    total_spent = 0
-    total_items = 0
-    approved_orders = 0
-    pending_orders = 0
-    canceled_orders = 0
-
     # Truyền hóa đơn tương ứng cho từng đơn hàng
     for order in orders:
-        total_spent += order.get_cart_total
-        total_items += order.get_cart_items
-        if order.status == 'approved':
-            approved_orders += 1
-        elif order.status == 'canceled':
-            canceled_orders += 1
-        else:
-            pending_orders += 1
         try:
-            order.invoice_obj = order.invoice  # Gắn invoice vào từng order
+            order.invoice = order.invoice  # Gắn invoice vào từng order
         except Invoice.DoesNotExist:
-            order.invoice_obj = None  # Nếu chưa có hóa đơn thì gán None
+            order.invoice = None  # Nếu chưa có hóa đơn thì gán None
 
     context = {
         'orders': orders,
         'categories': categories,
         'user_not_login': user_not_login,
         'user_login': user_login,
-        'total_orders': orders.count(),
-        'total_spent': total_spent,
-        'total_items': total_items,
-        'approved_orders': approved_orders,
-        'pending_orders': pending_orders,
-        'canceled_orders': canceled_orders,
-        'is_staff_history': is_staff_history,
     }
     return render(request, 'app/order_history.html', context)
 
@@ -612,3 +447,82 @@ def admin_dashboard(request):
     }
     
     return render(request, 'app/admin_dashboard.html', context)
+
+
+# ===================================================================
+# 👤 PROFILE - XEM VÀ SỬA THÔNG TIN TÀI KHOẢN
+# ===================================================================
+@login_required(login_url='login')
+def profile(request):
+    user = request.user
+    categories = Category.objects.filter(is_sub=False)
+    order, _ = Order.objects.get_or_create(customer=user, complete=False)
+    cartItems = order.get_cart_items
+    total_orders = Order.objects.filter(customer=user, complete=True).count()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_info':
+            user.first_name = request.POST.get('first_name', '').strip()
+            user.last_name  = request.POST.get('last_name', '').strip()
+            email = request.POST.get('email', '').strip()
+            if email:
+                user.email = email
+            user.save()
+            messages.success(request, 'Cập nhật thông tin thành công!')
+            return redirect('profile')
+
+        elif action == 'change_password':
+            form = PasswordChangeForm(user, request.POST)
+            if form.is_valid():
+                updated_user = form.save()
+                update_session_auth_hash(request, updated_user)
+                messages.success(request, 'Đổi mật khẩu thành công!')
+            else:
+                for field_errors in form.errors.values():
+                    for err in field_errors:
+                        messages.error(request, err)
+            return redirect('profile')
+
+    context = {
+        'categories': categories,
+        'cartItems': cartItems,
+        'user_login': 'show',
+        'user_not_login': 'hidden',
+        'total_orders': total_orders,
+    }
+    return render(request, 'app/profile.html', context)
+
+
+# ===================================================================
+# ℹ️ ABOUT & CONTACT - TRANG TĨNH
+# ===================================================================
+def about(request):
+    categories = Category.objects.filter(is_sub=False)
+    cartItems = 0
+    if request.user.is_authenticated:
+        order, _ = Order.objects.get_or_create(customer=request.user, complete=False)
+        cartItems = order.get_cart_items
+    context = {
+        'categories': categories,
+        'cartItems': cartItems,
+        'user_login': 'show' if request.user.is_authenticated else 'hidden',
+        'user_not_login': 'hidden' if request.user.is_authenticated else 'show',
+    }
+    return render(request, 'app/about.html', context)
+
+
+def contact(request):
+    categories = Category.objects.filter(is_sub=False)
+    cartItems = 0
+    if request.user.is_authenticated:
+        order, _ = Order.objects.get_or_create(customer=request.user, complete=False)
+        cartItems = order.get_cart_items
+    context = {
+        'categories': categories,
+        'cartItems': cartItems,
+        'user_login': 'show' if request.user.is_authenticated else 'hidden',
+        'user_not_login': 'hidden' if request.user.is_authenticated else 'show',
+    }
+    return render(request, 'app/contact.html', context)

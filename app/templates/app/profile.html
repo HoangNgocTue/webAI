@@ -1,0 +1,113 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block main-content %}
+<div class="row justify-content-center g-4" style="padding-top: 20px;">
+
+  <!-- Left: Avatar + Stats -->
+  <div class="col-lg-3">
+    <div class="bg-white rounded-4 shadow-sm p-4 text-center">
+      <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#4eaeb9,#3d8fa3);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:2.2rem;font-weight:700;color:white;margin:0 auto 16px;">
+        {{ request.user.username|first|upper }}
+      </div>
+      <h5 style="font-weight:700;margin-bottom:4px;">
+        {% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}{{ request.user.username }}{% endif %}
+      </h5>
+      <p style="color:#718096;font-size:0.85rem;margin-bottom:20px;">{{ request.user.email|default:"Chưa có email" }}</p>
+
+      <div style="background:#f0f4f8;border-radius:10px;padding:14px;">
+        <div style="font-size:1.8rem;font-weight:800;color:#3d8fa3;">{{ total_orders }}</div>
+        <div style="font-size:0.8rem;color:#718096;">Đơn hàng đã đặt</div>
+      </div>
+
+      <a href="{% url 'order_history' %}" class="btn w-100 mt-3"
+         style="background:#4eaeb9;color:white;border-radius:10px;font-weight:500;">
+        📋 Xem lịch sử đơn hàng
+      </a>
+    </div>
+  </div>
+
+  <!-- Right: Edit Forms -->
+  <div class="col-lg-7">
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show rounded-3 mb-3" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Thông tin cá nhân -->
+    <div class="bg-white rounded-4 shadow-sm p-4 mb-4">
+      <h6 style="font-weight:700;color:#1a202c;padding-bottom:12px;border-bottom:2px solid #4eaeb9;margin-bottom:20px;">
+        👤 Thông tin cá nhân
+      </h6>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_info">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Tên đăng nhập</label>
+            <input type="text" class="form-control" value="{{ request.user.username }}" disabled
+                   style="background:#f7fafc;border-radius:8px;">
+            <small class="text-muted">Tên đăng nhập không thể thay đổi</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ request.user.email }}"
+                   placeholder="email@example.com" style="border-radius:8px;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Họ</label>
+            <input type="text" name="last_name" class="form-control" value="{{ request.user.last_name }}"
+                   placeholder="Nguyễn" style="border-radius:8px;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Tên</label>
+            <input type="text" name="first_name" class="form-control" value="{{ request.user.first_name }}"
+                   placeholder="Văn A" style="border-radius:8px;">
+          </div>
+        </div>
+        <button type="submit" class="btn mt-4 px-4"
+                style="background:#4eaeb9;color:white;border-radius:10px;font-weight:600;">
+          💾 Lưu thay đổi
+        </button>
+      </form>
+    </div>
+
+    <!-- Đổi mật khẩu -->
+    <div class="bg-white rounded-4 shadow-sm p-4">
+      <h6 style="font-weight:700;color:#1a202c;padding-bottom:12px;border-bottom:2px solid #e53e3e;margin-bottom:20px;">
+        🔐 Đổi mật khẩu
+      </h6>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="change_password">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Mật khẩu hiện tại</label>
+            <input type="password" name="old_password" class="form-control" required style="border-radius:8px;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Mật khẩu mới</label>
+            <input type="password" name="new_password1" class="form-control" required style="border-radius:8px;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Xác nhận mật khẩu mới</label>
+            <input type="password" name="new_password2" class="form-control" required style="border-radius:8px;">
+          </div>
+        </div>
+        <button type="submit" class="btn mt-4 px-4"
+                style="background:#e53e3e;color:white;border-radius:10px;font-weight:600;">
+          🔑 Đổi mật khẩu
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
