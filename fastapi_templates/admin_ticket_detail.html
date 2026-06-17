@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+{% set sl = status_labels.get(ticket.status, (ticket.status, '#94a3b8')) %}
+
+<div style="max-width:800px;margin:10px auto 40px;">
+
+  <!-- Breadcrumb -->
+  <div style="margin-bottom:16px;font-size:0.85rem;">
+    <a href="{{ request.url_for('admin_dashboard') }}" style="color:var(--text-muted);text-decoration:none;">Dashboard</a>
+    <span style="color:var(--text-muted);margin:0 6px;">›</span>
+    <a href="{{ request.url_for('admin_tickets') }}" style="color:var(--text-muted);text-decoration:none;">Tickets</a>
+    <span style="color:var(--text-muted);margin:0 6px;">›</span>
+    <span style="color:var(--text);font-weight:600;">{{ ticket.ticket_id }}</span>
+  </div>
+
+  <!-- Ticket Header -->
+  <div class="bg-white rounded-4 shadow-sm p-4 mb-4" style="border:1px solid var(--border);">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:4px;">MÃ TICKET</div>
+        <div style="font-size:1.4rem;font-weight:800;color:var(--primary);letter-spacing:1px;">{{ ticket.ticket_id }}</div>
+      </div>
+      <div class="text-end">
+        <span style="background:{{ sl[1] }}22;color:{{ sl[1] }};padding:6px 16px;border-radius:20px;
+                     font-weight:700;font-size:0.88rem;border:1.5px solid {{ sl[1] }}55;">
+          {{ sl[0] }}
+        </span>
+      </div>
+    </div>
+
+    <hr style="margin:16px 0;border-color:#f1f5f9;">
+
+    <div class="row g-3">
+      <div class="col-sm-6">
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:3px;">LOẠI VẤN ĐỀ</div>
+        <div style="font-weight:600;color:var(--text);">{{ category_labels.get(ticket.category, ticket.category) }}</div>
+      </div>
+      <div class="col-sm-6">
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:3px;">EMAIL KHÁCH</div>
+        <div style="font-weight:600;color:var(--text);">{{ ticket.customer_email or '—' }}</div>
+      </div>
+      <div class="col-sm-6">
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:3px;">NGÀY TẠO</div>
+        <div style="font-weight:600;color:var(--text);">{{ ticket.created_at.strftime('%d/%m/%Y %H:%M') if ticket.created_at else '—' }}</div>
+      </div>
+      <div class="col-sm-6">
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:3px;">CẬP NHẬT LẦN CUỐI</div>
+        <div style="font-weight:600;color:var(--text);">{{ ticket.updated_at.strftime('%d/%m/%Y %H:%M') if ticket.updated_at else '—' }}</div>
+      </div>
+    </div>
+
+    <!-- Nội dung mô tả -->
+    <div style="margin-top:16px;">
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;">NỘI DUNG YÊU CẦU</div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;font-size:0.88rem;
+                  color:#374151;line-height:1.7;white-space:pre-wrap;border-left:3px solid var(--primary);">{{ ticket.description }}</div>
+    </div>
+
+    <!-- Ghi chú nhân viên (lịch sử trả lời) -->
+    {% if ticket.staff_note %}
+    <div style="margin-top:16px;">
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">📝 LỊCH SỬ XỬ LÝ</div>
+      {% for note_block in ticket.staff_note.strip().split('\n\n') %}
+      {% if note_block.strip() %}
+      <div style="background:#eff6ff;border-radius:10px;padding:12px 16px;margin-bottom:8px;
+                  font-size:0.85rem;color:#1e40af;line-height:1.6;white-space:pre-wrap;border-left:3px solid #3b82f6;">{{ note_block.strip() }}</div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Status change quick actions -->
+  <div class="bg-white rounded-4 shadow-sm p-4 mb-4" style="border:1px solid var(--border);">
+    <h6 style="font-weight:700;color:var(--text);margin-bottom:12px;">⚡ Cập nhật trạng thái nhanh</h6>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% for status_val, (label, color) in status_labels.items() %}
+      <form method="post" action="{{ request.url_for('admin_ticket_status', ticket_id=ticket.ticket_id) }}" style="margin:0;">
+        <input type="hidden" name="status" value="{{ status_val }}">
+        <button type="submit"
+                style="padding:7px 16px;border-radius:20px;font-size:0.82rem;font-weight:600;cursor:pointer;
+                       border:1.5px solid {{ color }};
+                       {% if ticket.status == status_val %}background:{{ color }};color:white;{% else %}background:white;color:{{ color }};{% endif %}">
+          {{ label }}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Reply Form -->
+  <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
+    <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">✉️ Phản hồi trực tiếp cho khách</h6>
+
+    {% if success %}
+    <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:14px 18px;margin-bottom:16px;">
+      <div style="color:#16a34a;font-weight:600;">✅ Đã gửi email phản hồi cho <strong>{{ ticket.customer_email }}</strong> thành công!</div>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:14px 18px;margin-bottom:16px;">
+      <div style="color:#dc2626;font-weight:600;">⚠ {{ error }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Preview email to -->
+    {% if ticket.customer_email %}
+    <div style="background:#f0f9ff;border-radius:10px;padding:10px 16px;margin-bottom:16px;
+                display:flex;align-items:center;gap:10px;font-size:0.88rem;">
+      <span style="color:#0369a1;">📧</span>
+      <span style="color:#0369a1;">Email sẽ được gửi đến: <strong>{{ ticket.customer_email }}</strong></span>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ request.url_for('admin_ticket_reply', ticket_id=ticket.ticket_id) }}">
+      <div style="margin-bottom:16px;">
+        <label style="font-weight:600;font-size:0.88rem;color:var(--text);display:block;margin-bottom:6px;">
+          Cập nhật trạng thái kèm phản hồi
+        </label>
+        <select name="new_status"
+                style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;
+                       font-size:0.88rem;background:white;outline:none;">
+          {% for sv, (sl2, sc) in status_labels.items() %}
+          <option value="{{ sv }}" {% if ticket.status == sv %}selected{% endif %}>{{ sl2 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-weight:600;font-size:0.88rem;color:var(--text);display:block;margin-bottom:6px;">
+          Nội dung phản hồi <span style="color:#ef4444;">*</span>
+        </label>
+        <textarea name="reply_body" rows="6" required
+                  placeholder="Nhập nội dung phản hồi gửi cho khách hàng..."
+                  style="width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:10px;
+                         font-size:0.88rem;resize:vertical;outline:none;line-height:1.6;"
+                  onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+      </div>
+
+      <button type="submit"
+              style="width:100%;padding:13px;background:var(--primary);color:white;border:none;
+                     border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;"
+              onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1">
+        📨 Gửi phản hồi qua email
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

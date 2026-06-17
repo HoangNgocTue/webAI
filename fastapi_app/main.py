@@ -9,7 +9,7 @@ load_dotenv()
 
 from .database import engine
 from .admin_setup import setup_admin
-from .routers import shop, auth_router, cart_router, orders_router, profile_router, pages_router, chatbot_router, support_router
+from .routers import shop, auth_router, cart_router, orders_router, profile_router, pages_router, chatbot_router, support_router, admin_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -43,3 +43,4 @@ app.include_router(profile_router.router)
 app.include_router(pages_router.router)
 app.include_router(chatbot_router.router)
 app.include_router(support_router.router)
+app.include_router(admin_router.router)

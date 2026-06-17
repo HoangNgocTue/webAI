@@ -142,6 +142,11 @@
                         </div>
                     </div>
                     <hr>
+                    {% if current_user.is_staff or current_user.is_superuser %}
+                    <a href="{{ request.url_for('admin_dashboard') }}" class="account-dropdown__item" style="color:#7c3aed;font-weight:600;">📊 Dashboard Admin</a>
+                    <a href="/admin/" class="account-dropdown__item" style="color:#0369a1;">⚙️ SQLAdmin Panel</a>
+                    <hr>
+                    {% endif %}
                     <a href="{{ request.url_for('profile') }}" class="account-dropdown__item">👤 Thông tin tài khoản</a>
                     <a href="{{ request.url_for('order_history') }}" class="account-dropdown__item">📋 Lịch sử đơn hàng</a>
                     <hr>
