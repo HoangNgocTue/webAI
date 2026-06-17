@@ -38,6 +38,7 @@ INTENTS = {
 def normalize_text(value: str) -> str:
     value = unicodedata.normalize("NFD", value or "")
     value = "".join(ch for ch in value if unicodedata.category(ch) != "Mn")
+    value = value.replace("đ", "d").replace("Đ", "D")
     return value.lower()
 
 
@@ -610,6 +611,17 @@ def parse_price_filters(text: str) -> dict:
     normalized = normalize_text(text)
 
     price_unit_pattern = r"(?:trieu|triệu|tr|m|cu|củ)"
+    range_match = re.search(
+        rf"(\d+(?:[.,]\d+)?)\s*(?:den|toi|-|–|—)\s*(\d+(?:[.,]\d+)?)\s*{price_unit_pattern}",
+        normalized,
+    )
+    if range_match:
+        low = Decimal(range_match.group(1).replace(",", ".")) * PRICE_UNIT
+        high = Decimal(range_match.group(2).replace(",", ".")) * PRICE_UNIT
+        filters["price_min"] = min(low, high)
+        filters["price_max"] = max(low, high)
+        return filters
+
     range_match = re.search(
         rf"(?:tu|khoang)\s*(\d+(?:[.,]\d+)?)\s*(?:den|-)\s*(\d+(?:[.,]\d+)?)\s*{price_unit_pattern}",
         normalized,
@@ -1253,15 +1265,24 @@ def format_products_for_response(products: list) -> str:
 
 
 def get_recent_history(request, limit: int = 5) -> str:
-    if not request.user.is_authenticated:
-        return "Khách chưa đăng nhập, chưa có lịch sử hội thoại."
-
-    history = ChatHistory.objects.filter(user=request.user).order_by("-created_at")[:limit]
-    lines = []
-    for item in reversed(history):
-        lines.append(f"Khách: {item.message}\nBot: {item.reply}")
+    if request.user.is_authenticated:
+        history = ChatHistory.objects.filter(user=request.user).order_by("-created_at")[:limit]
+        lines = [f"Khách: {item.message}\nBot: {item.reply}" for item in reversed(history)]
+    else:
+        session_history = request.session.get("chatbot_recent_history", [])[-limit:]
+        lines = [f"Khách: {item['message']}\nBot: {item['reply']}" for item in session_history]
 
     return "\n\n".join(lines) if lines else "Chưa có lịch sử hội thoại."
+
+
+def record_chat_history(request, message: str, reply: str):
+    session_history = request.session.get("chatbot_recent_history", [])
+    session_history.append({"message": message, "reply": reply})
+    request.session["chatbot_recent_history"] = session_history[-20:]
+    request.session.modified = True
+
+    if request.user.is_authenticated:
+        ChatHistory.objects.create(user=request.user, message=message, reply=reply)
 
 
 def build_fallback_reply(products: list, filters: dict) -> str:
@@ -1324,8 +1345,7 @@ def chatbot_api(request):
 
     pending_reply = handle_pending_cart_confirmation(request, user_message)
     if pending_reply:
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=pending_reply)
+        record_chat_history(request, user_message, pending_reply)
         return JsonResponse({"reply": pending_reply})
 
     ai_intent = get_ai_intent(request, user_message)
@@ -1333,49 +1353,42 @@ def chatbot_api(request):
 
     special_reply = get_special_reply(user_message)
     if special_reply and intent_name in (None, "", "smalltalk", "store_info", "unknown"):
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=special_reply)
+        record_chat_history(request, user_message, special_reply)
         return JsonResponse({"reply": special_reply})
 
     if intent_name == "view_cart" or is_cart_view_request(user_message):
         clear_cart_confirmation(request)
         reply = format_cart_reply(request)
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        record_chat_history(request, user_message, reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "remove_from_cart" or is_remove_from_cart_request(user_message):
         reply = build_remove_from_cart_reply(request, user_message)
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        record_chat_history(request, user_message, reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "more" or is_more_products_request(user_message):
         clear_cart_confirmation(request)
         reply = build_more_products_reply(request, user_message, ai_intent)
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        record_chat_history(request, user_message, reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "similar" or is_similar_products_request(user_message):
         clear_cart_confirmation(request)
         reply = build_similar_products_reply(request)
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        record_chat_history(request, user_message, reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "detail" or is_context_detail_request(user_message):
         clear_cart_confirmation(request)
         reply = build_context_detail_reply(request, user_message)
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        record_chat_history(request, user_message, reply)
         return JsonResponse({"reply": reply})
 
     if intent_name == "add_to_cart" or is_add_to_cart_request(user_message):
         clear_cart_confirmation(request)
         reply = build_add_to_cart_reply(request, select_product_for_cart(request, user_message))
-        if request.user.is_authenticated:
-            ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+        record_chat_history(request, user_message, reply)
         return JsonResponse({"reply": reply})
 
     clear_cart_confirmation(request)
@@ -1384,7 +1397,6 @@ def chatbot_api(request):
     fallback_reply = build_fallback_reply(products, filters)
     reply = get_ai_reply(request, user_message, products, filters, fallback_reply)
 
-    if request.user.is_authenticated:
-        ChatHistory.objects.create(user=request.user, message=user_message, reply=reply)
+    record_chat_history(request, user_message, reply)
 
     return JsonResponse({"reply": reply})
