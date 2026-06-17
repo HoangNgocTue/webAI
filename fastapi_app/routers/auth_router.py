@@ -16,7 +16,7 @@ router = APIRouter(tags=["auth"])
 async def login_get(request: Request, ctx: BaseContext = Depends(BaseContext)):
     if ctx.current_user:
         return RedirectResponse(request.url_for("home"), status_code=302)
-    return templates.TemplateResponse("login.html", ctx.dict(error=None))
+    return templates.TemplateResponse(request, "login.html", ctx.dict(error=None))
 
 
 @router.post("/login/", name="login_post")
@@ -33,7 +33,7 @@ async def login_post(request: Request, ctx: BaseContext = Depends(BaseContext)):
         user.last_login = datetime.utcnow()
         ctx.db.commit()
         return RedirectResponse(request.url_for("home"), status_code=302)
-    return templates.TemplateResponse("login.html", ctx.dict(error="Tên đăng nhập hoặc mật khẩu không đúng!"))
+    return templates.TemplateResponse(request, "login.html", ctx.dict(error="Tên đăng nhập hoặc mật khẩu không đúng!"))
 
 
 @router.get("/logout/", name="logout")
@@ -44,7 +44,7 @@ async def logout(request: Request):
 
 @router.get("/register/", name="register")
 async def register_get(request: Request, ctx: BaseContext = Depends(BaseContext)):
-    return templates.TemplateResponse("register.html", ctx.dict(errors=[]))
+    return templates.TemplateResponse(request, "register.html", ctx.dict(errors=[]))
 
 
 @router.post("/register/", name="register_post")
@@ -68,7 +68,7 @@ async def register_post(request: Request, ctx: BaseContext = Depends(BaseContext
         errors.append("Mật khẩu phải có ít nhất 8 ký tự.")
 
     if errors:
-        return templates.TemplateResponse("register.html", ctx.dict(errors=errors))
+        return templates.TemplateResponse(request, "register.html", ctx.dict(errors=errors))
 
     user = User(
         username=username,

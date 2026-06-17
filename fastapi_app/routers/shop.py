@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -13,13 +12,13 @@ router = APIRouter(tags=["shop"])
 @router.get("/", name="home")
 async def home(request: Request, ctx: BaseContext = Depends(BaseContext)):
     products = ctx.db.query(Product).all()
-    return templates.TemplateResponse("home.html", ctx.dict(products=products))
+    return templates.TemplateResponse(request, "home.html", ctx.dict(products=products))
 
 
 @router.get("/detail/", name="detail")
 async def detail(request: Request, id: int = 0, ctx: BaseContext = Depends(BaseContext)):
     product = ctx.db.query(Product).filter(Product.id == id).first()
-    return templates.TemplateResponse("detail.html", ctx.dict(product=product))
+    return templates.TemplateResponse(request, "detail.html", ctx.dict(product=product))
 
 
 @router.get("/category/", name="category")
@@ -30,7 +29,7 @@ async def category(request: Request, category: str = "", ctx: BaseContext = Depe
     else:
         products = ctx.db.query(Product).all()
     return templates.TemplateResponse(
-        "category.html", ctx.dict(products=products, active_category=category)
+        request, "category.html", ctx.dict(products=products, active_category=category)
     )
 
 
@@ -44,4 +43,4 @@ async def search(request: Request, ctx: BaseContext = Depends(BaseContext)):
         searched = form.get("searched", "")
         if searched:
             keys = ctx.db.query(Product).filter(Product.name.ilike(f"%{searched}%")).all()
-    return templates.TemplateResponse("search.html", ctx.dict(searched=searched, keys=keys))
+    return templates.TemplateResponse(request, "search.html", ctx.dict(searched=searched, keys=keys))

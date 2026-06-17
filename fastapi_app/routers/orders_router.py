@@ -25,7 +25,7 @@ async def checkout_get(request: Request, ctx: BaseContext = Depends(BaseContext)
     if not order or order.get_cart_items == 0:
         return RedirectResponse("/cart/", status_code=302)
     items = order.order_items
-    return templates.TemplateResponse("checkout.html", ctx.dict(order=order, items=items))
+    return templates.TemplateResponse(request, "checkout.html", ctx.dict(order=order, items=items))
 
 
 @router.post("/checkout/", name="checkout_post")
@@ -62,7 +62,7 @@ async def invoice_detail(id: int, request: Request, ctx: BaseContext = Depends(B
     invoice = ctx.db.query(Invoice).filter(Invoice.id == id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Hóa đơn không tồn tại")
-    return templates.TemplateResponse("invoice_detail.html", ctx.dict(invoice=invoice))
+    return templates.TemplateResponse(request, "invoice_detail.html", ctx.dict(invoice=invoice))
 
 
 @router.get("/order-history/", name="order_history")
@@ -75,7 +75,7 @@ async def order_history(request: Request, ctx: BaseContext = Depends(BaseContext
         .order_by(Order.date_order.desc())
         .all()
     )
-    return templates.TemplateResponse("order_history.html", ctx.dict(orders=orders))
+    return templates.TemplateResponse(request, "order_history.html", ctx.dict(orders=orders))
 
 
 @router.get("/admin-dashboard/", name="admin_dashboard")
@@ -117,6 +117,7 @@ async def admin_dashboard(request: Request, ctx: BaseContext = Depends(BaseConte
     )
 
     return templates.TemplateResponse(
+        request,
         "admin_dashboard.html",
         ctx.dict(
             total_revenue=f"{total_revenue:,.0f}".replace(",", "."),

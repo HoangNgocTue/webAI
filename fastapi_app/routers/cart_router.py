@@ -22,7 +22,7 @@ async def cart(request: Request, ctx: BaseContext = Depends(BaseContext)):
         )
         if order:
             items = order.order_items
-    return templates.TemplateResponse("cart.html", ctx.dict(items=items, order=order))
+    return templates.TemplateResponse(request, "cart.html", ctx.dict(items=items, order=order))
 
 
 @router.post("/update_item/", name="update_item")

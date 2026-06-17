@@ -19,7 +19,7 @@ async def profile_get(request: Request, ctx: BaseContext = Depends(BaseContext))
         .count()
     )
     return templates.TemplateResponse(
-        "profile.html", ctx.dict(total_orders=total_orders, messages=[])
+        request, "profile.html", ctx.dict(total_orders=total_orders, messages=[])
     )
 
 
@@ -63,5 +63,5 @@ async def profile_post(request: Request, ctx: BaseContext = Depends(BaseContext)
         .count()
     )
     return templates.TemplateResponse(
-        "profile.html", ctx.dict(total_orders=total_orders, messages=flash_messages)
+        request, "profile.html", ctx.dict(total_orders=total_orders, messages=flash_messages)
     )

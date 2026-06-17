@@ -16,7 +16,7 @@ router = APIRouter(tags=["chatbot"])
 
 @router.get("/chatbot/", name="chatbot_view")
 async def chatbot_view(request: Request, ctx: BaseContext = Depends(BaseContext)):
-    return templates.TemplateResponse("chatbot.html", ctx.dict())
+    return templates.TemplateResponse(request, "chatbot.html", ctx.dict())
 
 
 @router.post("/api/chatbot/", name="chatbot_api")
