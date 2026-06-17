@@ -106,13 +106,25 @@
             border: 1px solid rgba(255,255,255,0.45);
             background: rgba(255,255,255,0.16);
             color: var(--chatbot-light);
-            border-radius: 999px;
-            padding: 5px 9px;
-            font-size: 0.78rem;
-            font-weight: 700;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            padding: 0;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .chat-tool-btn:hover { background: rgba(255,255,255,0.26); }
+        .chat-tool-btn svg {
+            width: 17px;
+            height: 17px;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         .chat-header .close-btn {
             background: none;
             border: none;
@@ -369,8 +381,12 @@
     <div class="chat-header">
         <span>Đà Nẵng Store Assistant 🤖</span>
         <div class="chat-header-actions">
-            <button class="chat-tool-btn" id="show-history" type="button">Lịch sử</button>
-            <button class="chat-tool-btn" id="clear-history" type="button">Xóa</button>
+            <button class="chat-tool-btn" id="clear-history" type="button" aria-label="Reset lịch sử chat" title="Reset lịch sử chat">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                    <path d="M21 3v6h-6"></path>
+                </svg>
+            </button>
             <button class="close-btn" id="close-chat" type="button">×</button>
         </div>
     </div>
@@ -425,7 +441,6 @@
         const chatbox = document.getElementById('chatbox');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const showHistoryButton = document.getElementById('show-history');
         const clearHistoryButton = document.getElementById('clear-history');
         const quickPromptButtons = document.querySelectorAll('#quick-prompts button');
         const CHAT_HISTORY_KEY = 'danang_store_chat_history';
@@ -434,7 +449,6 @@
         // Mở/đóng chatbot
         chatLauncher.addEventListener('click', () => chatWidget.classList.toggle('show'));
         closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
-        showHistoryButton.addEventListener('click', showSavedHistory);
         clearHistoryButton.addEventListener('click', clearChatHistory);
         quickPromptButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -485,12 +499,6 @@
                 return;
             }
             history.forEach(item => appendMessage(item.message, item.type, { persist: false }));
-        }
-
-        function showSavedHistory() {
-            renderSavedHistory();
-            chatWidget.classList.add('show');
-            scrollToBottom();
         }
 
         async function clearChatHistory() {
