@@ -174,6 +174,32 @@
             margin-top: 2px;
         }
 
+        .quick-prompts {
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px 0;
+            overflow-x: auto;
+            background: #f5f5f5;
+            border-top: 1px solid #e5e7eb;
+        }
+        .quick-prompts button {
+            border: 1px solid #cfe5ea;
+            background: #ffffff;
+            color: #0f6170;
+            border-radius: 999px;
+            padding: 7px 11px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .quick-prompts button:hover {
+            background: #eaf8fb;
+            border-color: var(--chatbot-primary);
+            color: #073f49;
+        }
+
         .typing-indicator { align-self: flex-start; }
         .typing-indicator span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #aaa; margin: 0 2px; animation: bounce 1.2s infinite; }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
@@ -351,6 +377,13 @@
     <div class="chat-messages" id="chatbox">
         <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
     </div>
+    <div class="quick-prompts" id="quick-prompts" aria-label="Gợi ý nhanh">
+        <button type="button" data-prompt="điện thoại 3-9 triệu">Điện thoại</button>
+        <button type="button" data-prompt="laptop dưới 15 triệu">Laptop</button>
+        <button type="button" data-prompt="linh kiện PC">Linh kiện PC</button>
+        <button type="button" data-prompt="phụ kiện bán chạy">Phụ kiện</button>
+        <button type="button" data-prompt="liên hệ cửa hàng">Liên hệ</button>
+    </div>
     <div class="chat-input">
         <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn...">
         <button id="send-button">
@@ -394,6 +427,7 @@
         const sendButton = document.getElementById('send-button');
         const showHistoryButton = document.getElementById('show-history');
         const clearHistoryButton = document.getElementById('clear-history');
+        const quickPromptButtons = document.querySelectorAll('#quick-prompts button');
         const CHAT_HISTORY_KEY = 'danang_store_chat_history';
         const DEFAULT_BOT_MESSAGE = 'Xin chào! Tôi có thể giúp gì cho bạn?';
 
@@ -402,6 +436,12 @@
         closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
         showHistoryButton.addEventListener('click', showSavedHistory);
         clearHistoryButton.addEventListener('click', clearChatHistory);
+        quickPromptButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                messageInput.value = button.dataset.prompt || '';
+                sendMessage();
+            });
+        });
 
         // Gửi tin nhắn
         sendButton.addEventListener('click', sendMessage);
