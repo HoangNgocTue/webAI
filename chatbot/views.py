@@ -1329,6 +1329,51 @@ def chatbot_view(request):
     return render(request, "chatbot/chatbot.html")
 
 
+def product_preview_api(request):
+    raw_ids = request.GET.get("ids", "")
+    ids = []
+    for raw_id in raw_ids.split(","):
+        try:
+            ids.append(int(raw_id))
+        except ValueError:
+            continue
+
+    products = Product.objects.filter(id__in=ids).prefetch_related("category")
+    product_map = {product.id: product for product in products}
+    data = []
+    for product_id in ids:
+        product = product_map.get(product_id)
+        if not product:
+            continue
+        data.append({
+            "id": product.id,
+            "name": product.name,
+            "price": f"{int(product.price):,}".replace(",", ".") + "đ",
+            "image": product.ImageURL,
+            "url": f"/detail/?id={product.id}",
+        })
+    return JsonResponse({"products": data})
+
+
+@csrf_exempt
+def clear_history_api(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=400)
+
+    for key in [
+        "chatbot_recent_history",
+        "chatbot_last_product_ids",
+        "chatbot_seen_product_ids",
+        "chatbot_last_query",
+        "chatbot_last_filters",
+        "chatbot_last_added_product_id",
+        "chatbot_pending_cart_action",
+    ]:
+        request.session.pop(key, None)
+    request.session.modified = True
+    return JsonResponse({"ok": True})
+
+
 @csrf_exempt
 def chatbot_api(request):
     if request.method != "POST":
