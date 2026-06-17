@@ -7,10 +7,16 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
+def get_open_order(customer):
+    order = Order.objects.filter(customer=customer, complete=False).order_by('-date_order', '-id').first()
+    if order:
+        return order, False
+    return Order.objects.create(customer=customer, complete=False), True
+
 def detail(request):
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = get_open_order(customer)
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
         user_not_login = "hidden"
@@ -50,7 +56,7 @@ def category(request):
 
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = get_open_order(customer)
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
         user_not_login = "hidden"
@@ -61,8 +67,6 @@ def category(request):
         cartItems = 0
         user_not_login = "show"
         user_login = "hidden"
-        customer = None  # Ensure 'customer' is defined when the user is not logged in
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
 
     context = {
         'items': items,
@@ -86,7 +90,7 @@ def search(request):
     # Kiểm tra xem người dùng đã đăng nhập chưa
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = get_open_order(customer)
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items  # Lấy tổng số lượng sản phẩm trong giỏ hàng
         user_not_login = "hidden"
@@ -124,7 +128,7 @@ def register(request):
     user_login = "hidden"
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = get_open_order(customer)
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
         user_not_login = "hidden"
@@ -162,7 +166,7 @@ def loginPage(request):
             messages.info(request, 'user or password not correct!')
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = get_open_order(customer)
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
         user_not_login = "hidden"
@@ -193,7 +197,7 @@ def logoutPage(request):
 def home(request):
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = get_open_order(customer)
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items  # Lấy tổng số lượng sản phẩm trong giỏ hàng
         user_not_login = "hidden"
@@ -223,7 +227,7 @@ def home(request):
 def cart(request):
     if request.user.is_authenticated:
         customer = request.user
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = get_open_order(customer)
         items = order.orderitem_set.all()
         cartItems = order.get_cart_items
         user_not_login = "hidden"
@@ -253,7 +257,7 @@ def updateItem(request):
 
     customer = request.user
     product = Product.objects.get(id=productId)
-    order, created = Order.objects.get_or_create(customer=customer, complete=False)
+    order, created = get_open_order(customer)
     orderItem, created = OrderItem.objects.get_or_create(order=order, product=product)
 
     if action == 'add':
@@ -295,7 +299,9 @@ def checkout(request):
 
     if user:
         try:
-            order = Order.objects.get(customer=user, complete=False)
+            order = Order.objects.filter(customer=user, complete=False).order_by('-date_order', '-id').first()
+            if not order:
+                raise Order.DoesNotExist
             items = order.orderitem_set.all()
             cartItems = order.get_cart_items
         except Order.DoesNotExist:
@@ -456,7 +462,7 @@ def admin_dashboard(request):
 def profile(request):
     user = request.user
     categories = Category.objects.filter(is_sub=False)
-    order, _ = Order.objects.get_or_create(customer=user, complete=False)
+    order, _ = get_open_order(user)
     cartItems = order.get_cart_items
     total_orders = Order.objects.filter(customer=user, complete=True).count()
 
@@ -502,7 +508,7 @@ def about(request):
     categories = Category.objects.filter(is_sub=False)
     cartItems = 0
     if request.user.is_authenticated:
-        order, _ = Order.objects.get_or_create(customer=request.user, complete=False)
+        order, _ = get_open_order(request.user)
         cartItems = order.get_cart_items
     context = {
         'categories': categories,
@@ -517,7 +523,7 @@ def contact(request):
     categories = Category.objects.filter(is_sub=False)
     cartItems = 0
     if request.user.is_authenticated:
-        order, _ = Order.objects.get_or_create(customer=request.user, complete=False)
+        order, _ = get_open_order(request.user)
         cartItems = order.get_cart_items
     context = {
         'categories': categories,

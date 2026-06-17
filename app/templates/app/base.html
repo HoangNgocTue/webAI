@@ -106,13 +106,25 @@
             border: 1px solid rgba(255,255,255,0.45);
             background: rgba(255,255,255,0.16);
             color: var(--chatbot-light);
-            border-radius: 999px;
-            padding: 5px 9px;
-            font-size: 0.78rem;
-            font-weight: 700;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            padding: 0;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .chat-tool-btn:hover { background: rgba(255,255,255,0.26); }
+        .chat-tool-btn svg {
+            width: 17px;
+            height: 17px;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         .chat-header .close-btn {
             background: none;
             border: none;
@@ -172,6 +184,56 @@
             font-size: 0.84rem;
             font-weight: 800;
             margin-top: 2px;
+        }
+        .chat-product-slot {
+            display: block;
+            margin: 8px 0 10px;
+        }
+        .chat-product-image-link {
+            display: inline-flex;
+            width: 92px;
+            height: 92px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid #dbe5ef;
+            padding: 6px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .chat-product-image-link:hover {
+            border-color: var(--chatbot-primary);
+            transform: translateY(-1px);
+        }
+        .chat-product-image-link img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .quick-prompts {
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px 0;
+            overflow-x: auto;
+            background: #f5f5f5;
+            border-top: 1px solid #e5e7eb;
+        }
+        .quick-prompts button {
+            border: 1px solid #cfe5ea;
+            background: #ffffff;
+            color: #0f6170;
+            border-radius: 999px;
+            padding: 7px 11px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .quick-prompts button:hover {
+            background: #eaf8fb;
+            border-color: var(--chatbot-primary);
+            color: #073f49;
         }
 
         .typing-indicator { align-self: flex-start; }
@@ -295,7 +357,7 @@
     </div>
 </nav>
 
-<main style="background:#f1f5f9;padding:20px 20px 40px;" class="container mt-4">
+<main class="container site-main">
     {% block banner_slider %}{% endblock %}
     {% block main-content %}{% endblock %}
     {% block cart_content %}{% endblock %}
@@ -343,13 +405,24 @@
     <div class="chat-header">
         <span>Đà Nẵng Store Assistant 🤖</span>
         <div class="chat-header-actions">
-            <button class="chat-tool-btn" id="show-history" type="button">Lịch sử</button>
-            <button class="chat-tool-btn" id="clear-history" type="button">Xóa</button>
+            <button class="chat-tool-btn" id="clear-history" type="button" aria-label="Reset lịch sử chat" title="Reset lịch sử chat">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                    <path d="M21 3v6h-6"></path>
+                </svg>
+            </button>
             <button class="close-btn" id="close-chat" type="button">×</button>
         </div>
     </div>
     <div class="chat-messages" id="chatbox">
         <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+    </div>
+    <div class="quick-prompts" id="quick-prompts" aria-label="Gợi ý nhanh">
+        <button type="button" data-prompt="điện thoại 3-9 triệu">Điện thoại</button>
+        <button type="button" data-prompt="laptop dưới 15 triệu">Laptop</button>
+        <button type="button" data-prompt="linh kiện PC">Linh kiện PC</button>
+        <button type="button" data-prompt="phụ kiện bán chạy">Phụ kiện</button>
+        <button type="button" data-prompt="liên hệ cửa hàng">Liên hệ</button>
     </div>
     <div class="chat-input">
         <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn...">
@@ -392,16 +465,21 @@
         const chatbox = document.getElementById('chatbox');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const showHistoryButton = document.getElementById('show-history');
         const clearHistoryButton = document.getElementById('clear-history');
+        const quickPromptButtons = document.querySelectorAll('#quick-prompts button');
         const CHAT_HISTORY_KEY = 'danang_store_chat_history';
         const DEFAULT_BOT_MESSAGE = 'Xin chào! Tôi có thể giúp gì cho bạn?';
 
         // Mở/đóng chatbot
         chatLauncher.addEventListener('click', () => chatWidget.classList.toggle('show'));
         closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
-        showHistoryButton.addEventListener('click', showSavedHistory);
         clearHistoryButton.addEventListener('click', clearChatHistory);
+        quickPromptButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                messageInput.value = button.dataset.prompt || '';
+                sendMessage();
+            });
+        });
 
         // Gửi tin nhắn
         sendButton.addEventListener('click', sendMessage);
@@ -445,12 +523,6 @@
                 return;
             }
             history.forEach(item => appendMessage(item.message, item.type, { persist: false }));
-        }
-
-        function showSavedHistory() {
-            renderSavedHistory();
-            chatWidget.classList.add('show');
-            scrollToBottom();
         }
 
         async function clearChatHistory() {
@@ -509,7 +581,11 @@
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', type);
             if (type === 'bot') {
-                messageElement.innerHTML = marked.parse(message);
+                const messageWithSlots = message.replace(
+                    /<!--\s*PRODUCT:(\d+)\s*-->/g,
+                    '<span class="chat-product-slot" data-product-id="$1"></span>'
+                );
+                messageElement.innerHTML = marked.parse(messageWithSlots);
                 enhanceProductPreview(messageElement, message);
             } else {
                 messageElement.textContent = message;
@@ -522,8 +598,9 @@
         }
 
         async function enhanceProductPreview(messageElement, rawMessage) {
-            const ids = [...rawMessage.matchAll(/\/detail\/?\?id=(\d+)/g)]
-                .map(match => match[1])
+            const markerIds = [...rawMessage.matchAll(/<!--\s*PRODUCT:(\d+)\s*-->/g)].map(match => match[1]);
+            const linkIds = [...rawMessage.matchAll(/\/detail\/?\?id=(\d+)/g)].map(match => match[1]);
+            const ids = [...markerIds, ...linkIds]
                 .filter((id, index, arr) => arr.indexOf(id) === index);
             if (!ids.length) return;
 
@@ -532,17 +609,28 @@
                 if (!response.ok) return;
                 const data = await response.json();
                 (data.products || []).forEach(product => {
-                    const card = document.createElement('a');
-                    card.className = 'chat-product-card';
-                    card.href = product.url;
-                    card.innerHTML = `
+                    const imageLink = document.createElement('a');
+                    imageLink.className = 'chat-product-image-link';
+                    imageLink.href = product.url;
+                    imageLink.innerHTML = `
                         <img src="${escapeHtml(product.image || 'https://via.placeholder.com/80x80?text=No+Image')}" alt="">
-                        <div>
-                            <strong>${escapeHtml(product.name)}</strong>
-                            <span>${escapeHtml(product.price)}</span>
-                        </div>
                     `;
-                    messageElement.appendChild(card);
+                    const slot = messageElement.querySelector(`.chat-product-slot[data-product-id="${product.id}"]`);
+                    if (slot) {
+                        slot.appendChild(imageLink);
+                    } else {
+                        const card = document.createElement('a');
+                        card.className = 'chat-product-card';
+                        card.href = product.url;
+                        card.innerHTML = `
+                            <img src="${escapeHtml(product.image || 'https://via.placeholder.com/80x80?text=No+Image')}" alt="">
+                            <div>
+                                <strong>${escapeHtml(product.name)}</strong>
+                                <span>${escapeHtml(product.price)}</span>
+                            </div>
+                        `;
+                        messageElement.appendChild(card);
+                    }
                 });
                 scrollToBottom();
             } catch (error) {

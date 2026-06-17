@@ -18,6 +18,11 @@ load_dotenv()
 
 
 PRICE_UNIT = Decimal("1000000")
+PRODUCT_MARKER_RE = re.compile(r"<!--\s*PRODUCT:(\d+)\s*-->")
+DETAIL_MARKDOWN_LINK_RE = re.compile(
+    r"\s*-?\s*\[(?:Xem chi tiết|Xem sản phẩm)\]\(/detail/\?id=\d+\)",
+    re.IGNORECASE,
+)
 
 
 CATEGORY_SLUGS = {"laptop", "dien-thoai", "linh-kien-pc", "phu-kien"}
@@ -1131,10 +1136,10 @@ def build_context_detail_reply(request, message: str) -> str:
     remember_products(request, [product], filters={"detail_product": product.id})
     return (
         f"Thông tin **{product.name}**:\n\n"
+        f"<!--PRODUCT:{product.id}-->\n"
         f"- Giá: {price_vnd}đ\n"
         f"- Danh mục: {categories}\n"
         f"- {' | '.join(specs)}\n"
-        f"- [Xem chi tiết](/detail/?id={product.id})\n\n"
         "Nếu muốn mua, bạn nhắn **thêm sản phẩm này vào giỏ hàng**."
     )
 
@@ -1255,13 +1260,33 @@ def format_products_for_response(products: list) -> str:
         ]
         rows.append(
             f"{index}. {product.name}\n"
+            f"<!--PRODUCT:{product.id}-->\n"
             f"- Giá: {price_vnd}đ\n"
             f"- Danh mục: {categories}\n"
-            f"- Thông số: {' | '.join(specs)}\n"
-            f"- [Xem chi tiết](/detail/?id={product.id})"
+            f"- Thông số: {' | '.join(specs)}"
         )
 
     return "\n\n".join(rows)
+
+
+def ensure_product_markers(reply: str, products: list) -> str:
+    reply = DETAIL_MARKDOWN_LINK_RE.sub("", reply)
+    if not products:
+        return reply
+
+    existing_ids = {int(match.group(1)) for match in PRODUCT_MARKER_RE.finditer(reply)}
+    for product in products:
+        if product.id in existing_ids:
+            continue
+
+        marker = f"<!--PRODUCT:{product.id}-->"
+        name_pattern = re.compile(re.escape(product.name), re.IGNORECASE)
+        if name_pattern.search(reply):
+            reply = name_pattern.sub(lambda match: f"{match.group(0)}\n{marker}", reply, count=1)
+        else:
+            reply = f"{reply}\n\n{marker}"
+
+    return reply
 
 
 def get_recent_history(request, limit: int = 5) -> str:
@@ -1294,8 +1319,7 @@ def build_fallback_reply(products: list, filters: dict) -> str:
 
     return (
         "Mình tìm thấy vài lựa chọn phù hợp:\n\n"
-        f"{format_products_for_response(products)}\n\n"
-        "Bạn có thể bấm link chi tiết để xem thêm cấu hình và đặt hàng."
+        f"{format_products_for_response(products)}"
     )
 
 
@@ -1319,7 +1343,8 @@ Danh sách sản phẩm đã được truy vấn từ database:
 
 Quy tắc trả lời:
 - Chỉ tư vấn dựa trên danh sách sản phẩm ở trên.
-- Luôn kèm link /detail/?id=X cho sản phẩm được đề xuất.
+- Không hiển thị link hoặc nút xem chi tiết trong phần trả lời.
+- Giữ marker ẩn <!--PRODUCT:X--> ngay sau tên từng sản phẩm được đề xuất để hệ thống tự hiện ảnh bên dưới tên.
 - Nếu không có sản phẩm phù hợp, nói rõ và gợi ý khách nới tiêu chí.
 - Trả lời bằng tiếng Việt, ngắn gọn, thân thiện, chuyên nghiệp.
 """
@@ -1441,6 +1466,7 @@ def chatbot_api(request):
     remember_products(request, products, message=user_message, filters=filters)
     fallback_reply = build_fallback_reply(products, filters)
     reply = get_ai_reply(request, user_message, products, filters, fallback_reply)
+    reply = ensure_product_markers(reply, products)
 
     record_chat_history(request, user_message, reply)
 
