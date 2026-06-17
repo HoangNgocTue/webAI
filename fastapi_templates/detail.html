@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block main-content %}
+{% if product %}
+<div class="row g-4">
+
+  <!-- Product Image -->
+  <div class="col-lg-5">
+    <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
+      <div style="aspect-ratio:1/1;overflow:hidden;background:#f8fafc;border-radius:12px;margin-bottom:16px;">
+        <img src="{{ product.ImageURL }}" alt="{{ product.name }}"
+             style="width:100%;height:100%;object-fit:contain;padding:16px;"
+             onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'">
+      </div>
+      {% for cat in product.categories %}
+      <span class="category-badge">{{ cat.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Product Info -->
+  <div class="col-lg-7">
+    <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
+      <h1 style="font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:12px;">{{ product.name }}</h1>
+
+      <div class="detail-price mb-4">{{ product.price|vnd }}đ</div>
+
+      <!-- Stock badge -->
+      {% if product.stock == 0 %}
+      <span class="stock-badge out-of-stock mb-4 d-inline-block">❌ Hết hàng</span>
+      {% elif product.stock <= 3 %}
+      <span class="stock-badge low-stock mb-4 d-inline-block">⚠️ Sắp hết (còn {{ product.stock }})</span>
+      {% else %}
+      <span class="stock-badge in-stock mb-4 d-inline-block">✅ Còn hàng ({{ product.stock }})</span>
+      {% endif %}
+
+      <!-- Specs table -->
+      {% if product.cpu or product.gpu or product.ram or product.storage or product.color %}
+      <div class="spec-table mb-4">
+        {% if product.cpu %}
+        <div class="spec-row"><div class="spec-label">CPU</div><div class="spec-value">{{ product.cpu }}</div></div>
+        {% endif %}
+        {% if product.gpu %}
+        <div class="spec-row"><div class="spec-label">GPU</div><div class="spec-value">{{ product.gpu }}</div></div>
+        {% endif %}
+        {% if product.ram %}
+        <div class="spec-row"><div class="spec-label">RAM</div><div class="spec-value">{{ product.ram }}</div></div>
+        {% endif %}
+        {% if product.storage %}
+        <div class="spec-row"><div class="spec-label">Lưu trữ</div><div class="spec-value">{{ product.storage }}</div></div>
+        {% endif %}
+        {% if product.color %}
+        <div class="spec-row"><div class="spec-label">Màu sắc</div><div class="spec-value">{{ product.color }}</div></div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if product.detail %}
+      <div style="color:var(--text-muted);font-size:0.9rem;line-height:1.7;margin-bottom:20px;">{{ product.detail }}</div>
+      {% endif %}
+
+      <button data-product="{{ product.id }}" data-action="add"
+              class="detail-add-btn update-cart"
+              {% if product.stock == 0 %}disabled{% endif %}>
+        🛒 Thêm vào giỏ hàng
+      </button>
+    </div>
+
+    <!-- Policies -->
+    <div class="row g-3 mt-2">
+      <div class="col-6">
+        <div class="bg-white rounded-3 p-3 text-center" style="border:1px solid var(--border);">
+          <div style="font-size:1.5rem;">🛡️</div>
+          <div style="font-size:0.82rem;font-weight:600;margin-top:4px;">Bảo hành 12 tháng</div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="bg-white rounded-3 p-3 text-center" style="border:1px solid var(--border);">
+          <div style="font-size:1.5rem;">🔄</div>
+          <div style="font-size:0.82rem;font-weight:600;margin-top:4px;">Đổi trả 7 ngày</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+  <div style="font-size:4rem;margin-bottom:16px;">😕</div>
+  <h4>Không tìm thấy sản phẩm</h4>
+  <a href="{{ request.url_for('home') }}" class="btn mt-3" style="background:var(--primary);color:white;border-radius:10px;">← Về trang chủ</a>
+</div>
+{% endif %}
+{% endblock %}

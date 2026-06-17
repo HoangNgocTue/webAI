@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block main-content %}
+<div style="padding-top:20px;">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h2 style="font-weight:800;color:var(--text);margin-bottom:4px;">📊 Dashboard Quản trị</h2>
+      <p style="color:var(--text-muted);margin:0;">Tổng quan hoạt động cửa hàng</p>
+    </div>
+    <a href="{{ request.url_for('admin') }}" class="btn"
+       style="background:var(--primary);color:white;border-radius:10px;font-weight:500;">
+      ⚙️ Vào trang Admin
+    </a>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
+        <div style="font-size:2rem;margin-bottom:8px;">💰</div>
+        <div style="font-size:1.5rem;font-weight:800;color:var(--accent);">{{ total_revenue }}đ</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">Tổng doanh thu</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
+        <div style="font-size:2rem;margin-bottom:8px;">🛒</div>
+        <div style="font-size:1.5rem;font-weight:800;color:var(--primary);">{{ total_orders }}</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">Tổng đơn hàng</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
+        <div style="font-size:2rem;margin-bottom:8px;">👥</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#22c55e;">{{ total_customers }}</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">Khách hàng</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
+        <div style="font-size:2rem;margin-bottom:8px;">📦</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#f97316;">{{ total_products }}</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">Sản phẩm (tồn kho: {{ total_stock }})</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Order Status -->
+    <div class="col-md-4">
+      <div class="bg-white rounded-4 shadow-sm p-4 h-100" style="border:1px solid var(--border);">
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">📋 Trạng thái đơn hàng</h6>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div style="width:12px;height:12px;border-radius:50%;background:#f97316;flex-shrink:0;"></div>
+          <div style="flex:1;">Chờ duyệt</div>
+          <div style="font-weight:700;">{{ orders_pending }}</div>
+        </div>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div style="width:12px;height:12px;border-radius:50%;background:#22c55e;flex-shrink:0;"></div>
+          <div style="flex:1;">Đã duyệt</div>
+          <div style="font-weight:700;">{{ orders_approved }}</div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:12px;height:12px;border-radius:50%;background:#e53e3e;flex-shrink:0;"></div>
+          <div style="flex:1;">Đã hủy</div>
+          <div style="font-weight:700;">{{ orders_canceled }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="col-md-8">
+      <div class="bg-white rounded-4 shadow-sm p-4 h-100" style="border:1px solid var(--border);">
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">🏆 Top sản phẩm bán chạy</h6>
+        {% for product in top_products %}
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:white;
+                      display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">
+            {{ loop.index }}
+          </div>
+          <div style="flex:1;font-size:0.9rem;font-weight:500;color:var(--text);">{{ product[1] }}</div>
+          <span style="background:#e0f2fe;color:#0369a1;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">
+            {{ product[2] }} đã bán
+          </span>
+        </div>
+        {% else %}
+        <p style="color:var(--text-muted);">Chưa có dữ liệu bán hàng.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue Chart -->
+  <div class="bg-white rounded-4 shadow-sm p-4 mt-4" style="border:1px solid var(--border);">
+    <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">📈 Doanh thu 12 tháng gần đây</h6>
+    <canvas id="revenueChart" height="80"></canvas>
+  </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const monthsData = {{ months_data | safe }};
+const ctx = document.getElementById('revenueChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: monthsData.map(d => d.month),
+        datasets: [{
+            label: 'Doanh thu (VNĐ)',
+            data: monthsData.map(d => d.revenue),
+            backgroundColor: 'rgba(14, 116, 144, 0.6)',
+            borderColor: 'rgba(14, 116, 144, 1)',
+            borderWidth: 1,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { callback: v => v.toLocaleString('vi-VN') + 'đ' }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

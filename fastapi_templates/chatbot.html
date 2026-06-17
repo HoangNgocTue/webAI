@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block main-content %}
+<div style="padding-top:20px;">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="bg-white rounded-4 shadow-sm overflow-hidden" style="border:1px solid var(--border);height:600px;display:flex;flex-direction:column;">
+        <div class="px-4 py-3" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;">
+          <h5 style="margin:0;font-weight:700;">🤖 Dani — Trợ lý AI Đà Nẵng Store</h5>
+          <div style="font-size:0.82rem;opacity:0.85;margin-top:4px;">Hỗ trợ tư vấn sản phẩm và giải quyết vấn đề 24/7</div>
+        </div>
+        <div id="chatbox" style="flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:15px;background:#f5f5f5;">
+          <div class="message bot">Xin chào! Tôi là Dani, trợ lý AI của Đà Nẵng Store. Tôi có thể giúp bạn tư vấn sản phẩm, giải đáp thắc mắc về đơn hàng hoặc hỗ trợ kỹ thuật. Bạn cần giúp gì hôm nay?</div>
+        </div>
+        <div style="display:flex;padding:15px;border-top:1px solid var(--border);">
+          <input type="text" id="message-input" placeholder="Nhập câu hỏi của bạn..." class="form-control" style="border-radius:20px;border:1px solid var(--border);padding:10px 15px;">
+          <button id="send-button" style="background:none;border:none;cursor:pointer;padding:0 10px;margin-left:8px;">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div class="mt-3 text-center" style="font-size:0.82rem;color:var(--text-muted);">
+        💡 Thử hỏi: "Laptop dưới 15 triệu cho sinh viên" | "Điện thoại màn hình to pin trâu" | "Tôi muốn hỏi về bảo hành"
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Override chatbot to use full-page interface
+const chatbox = document.getElementById('chatbox');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-button');
+
+// Hide floating chatbot on this page
+document.getElementById('chat-launcher').style.display = 'none';
+document.getElementById('chat-widget').style.display = 'none';
+
+sendButton.addEventListener('click', sendMessage);
+messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
+
+function scrollToBottom() { chatbox.scrollTop = chatbox.scrollHeight; }
+
+async function sendMessage() {
+    const msg = messageInput.value.trim();
+    if (!msg) return;
+    appendMessage(msg, 'user');
+    messageInput.value = '';
+    showTypingIndicator();
+    try {
+        const res = await fetch('/api/chatbot/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        appendMessage(data.reply, 'bot');
+    } catch (e) {
+        appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
+    } finally {
+        hideTypingIndicator();
+    }
+}
+
+function appendMessage(message, type) {
+    const el = document.createElement('div');
+    el.classList.add('message', type);
+    if (type === 'bot') el.innerHTML = marked.parse(message);
+    else el.textContent = message;
+    chatbox.appendChild(el);
+    scrollToBottom();
+}
+
+function showTypingIndicator() {
+    const ind = document.createElement('div');
+    ind.id = 'typing-indicator';
+    ind.classList.add('message', 'typing-indicator');
+    ind.innerHTML = '<span></span><span></span><span></span>';
+    chatbox.appendChild(ind);
+    scrollToBottom();
+}
+
+function hideTypingIndicator() {
+    const ind = document.getElementById('typing-indicator');
+    if (ind) chatbox.removeChild(ind);
+}
+</script>
+{% endblock %}
+{% endblock %}

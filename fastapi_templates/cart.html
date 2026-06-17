@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block cart_content %}
+<div style="padding-top:10px;">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h2 style="font-weight:800;color:var(--text);margin-bottom:4px;">Giỏ hàng</h2>
+      <p style="color:var(--text-muted);margin:0;">{{ cart_items }} sản phẩm trong giỏ</p>
+    </div>
+    <a href="{{ request.url_for('home') }}" class="btn" style="background:#f0f4f8;color:#4a5568;border-radius:10px;font-weight:500;">
+      ← Tiếp tục mua sắm
+    </a>
+  </div>
+
+  {% if current_user and items %}
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
+        {% for item in items %}
+        {% if item.product %}
+        <div class="cart-row" id="cart-item-{{ item.product.id }}">
+          <div class="d-flex align-items-center gap-3 flex-grow-1">
+            <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}"
+                 style="width:70px;height:70px;object-fit:contain;border-radius:8px;border:1px solid var(--border);padding:4px;"
+                 onerror="this.style.display='none'">
+            <div style="flex:1;">
+              <a href="{{ request.url_for('detail') }}?id={{ item.product.id }}"
+                 style="font-weight:600;color:var(--text);text-decoration:none;font-size:0.95rem;">
+                {{ item.product.name }}
+              </a>
+              <div style="color:var(--text-muted);font-size:0.85rem;margin-top:4px;">
+                {{ item.product.price|vnd }}đ / sản phẩm
+              </div>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+              <img src="{{ request.url_for('static', path='images/cart.png') }}"
+                   class="chg-quantity update-cart" data-product="{{ item.product.id }}" data-action="remove"
+                   style="width:20px;cursor:pointer;filter:invert(50%);">
+              <span class="quantity" id="qty-{{ item.product.id }}">{{ item.quantity }}</span>
+              <img src="{{ request.url_for('static', path='images/cart.png') }}"
+                   class="chg-quantity update-cart" data-product="{{ item.product.id }}" data-action="add"
+                   style="width:20px;cursor:pointer;filter:invert(20%);">
+            </div>
+            <div style="font-weight:700;color:var(--accent);font-size:1rem;min-width:90px;text-align:right;">
+              {{ item.get_total|vnd }}đ
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:20px;">Tóm tắt đơn hàng</h6>
+        <div class="d-flex justify-content-between mb-2">
+          <span style="color:var(--text-muted);">Số lượng sản phẩm</span>
+          <span id="cart-item-count" style="font-weight:600;">{{ cart_items }}</span>
+        </div>
+        <hr style="border-color:var(--border);">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <span style="font-weight:700;color:var(--text);font-size:1.05rem;">Tổng cộng</span>
+          <span id="cart-total" style="font-weight:800;color:var(--accent);font-size:1.3rem;">
+            {{ order.get_cart_total|vnd }}đ
+          </span>
+        </div>
+        <a href="{{ request.url_for('checkout') }}" class="btn w-100"
+           style="background:var(--primary);color:white;border-radius:10px;font-weight:700;padding:14px;font-size:1rem;">
+          🛒 Tiến hành thanh toán
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+    <div style="font-size:4rem;margin-bottom:16px;">🛒</div>
+    <h5 style="font-weight:700;color:var(--text);margin-bottom:8px;">Giỏ hàng trống</h5>
+    <p style="color:var(--text-muted);margin-bottom:24px;">Hãy thêm sản phẩm vào giỏ để tiếp tục mua sắm!</p>
+    <a href="{{ request.url_for('home') }}" class="btn px-5 py-2"
+       style="background:var(--primary);color:white;border-radius:10px;font-weight:600;font-size:1rem;">
+      Mua sắm ngay
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

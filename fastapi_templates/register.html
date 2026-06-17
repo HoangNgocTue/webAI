@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block register %}
+<div class="row justify-content-center" style="padding-top:20px;">
+  <div class="col-md-6 col-lg-5">
+    <div class="bg-white rounded-4 shadow-sm p-5" style="border:1px solid var(--border);">
+      <div class="text-center mb-4">
+        <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);
+                    display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:white;margin:0 auto 12px;">
+          📝
+        </div>
+        <h4 style="font-weight:700;color:var(--text);">Tạo tài khoản</h4>
+        <p style="color:var(--text-muted);font-size:0.9rem;">Tham gia Đà Nẵng Store ngay hôm nay!</p>
+      </div>
+
+      {% for err in errors %}
+      <div class="alert alert-danger rounded-3 mb-2" style="font-size:0.88rem;">{{ err }}</div>
+      {% endfor %}
+
+      <form method="POST" action="{{ request.url_for('register_post') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Tên đăng nhập *</label>
+            <input type="text" name="username" class="form-control" placeholder="username" required
+                   style="border-radius:8px;padding:10px 14px;">
+          </div>
+          <div class="col-12">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Email</label>
+            <input type="email" name="email" class="form-control" placeholder="email@example.com"
+                   style="border-radius:8px;padding:10px 14px;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Họ</label>
+            <input type="text" name="last_name" class="form-control" placeholder="Nguyễn"
+                   style="border-radius:8px;padding:10px 14px;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Tên</label>
+            <input type="text" name="first_name" class="form-control" placeholder="Văn A"
+                   style="border-radius:8px;padding:10px 14px;">
+          </div>
+          <div class="col-12">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Mật khẩu *</label>
+            <input type="password" name="password1" class="form-control" placeholder="Ít nhất 8 ký tự" required
+                   style="border-radius:8px;padding:10px 14px;">
+          </div>
+          <div class="col-12">
+            <label class="form-label" style="font-weight:500;font-size:0.88rem;color:#4a5568;">Xác nhận mật khẩu *</label>
+            <input type="password" name="password2" class="form-control" placeholder="Nhập lại mật khẩu" required
+                   style="border-radius:8px;padding:10px 14px;">
+          </div>
+        </div>
+        <button type="submit" class="btn w-100 mt-4 py-2"
+                style="background:#22c55e;color:white;border-radius:10px;font-weight:700;font-size:1rem;">
+          Tạo tài khoản
+        </button>
+      </form>
+
+      <div class="text-center mt-4" style="font-size:0.88rem;color:var(--text-muted);">
+        Đã có tài khoản?
+        <a href="{{ request.url_for('login') }}" style="color:var(--primary);font-weight:600;">Đăng nhập</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

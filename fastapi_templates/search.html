@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block main-content %}
+<div class="mb-4">
+  <h4 style="font-weight:700;color:var(--text);">
+    {% if searched %}
+      Kết quả tìm kiếm: <span style="color:var(--primary);">"{{ searched }}"</span>
+    {% else %}
+      Tìm kiếm sản phẩm
+    {% endif %}
+  </h4>
+  {% if searched %}
+  <p style="color:var(--text-muted);">Tìm thấy {{ keys|length }} sản phẩm</p>
+  {% endif %}
+</div>
+
+{% if searched %}
+<div class="row g-3">
+  {% for product in keys %}
+  <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+    <div class="product-card">
+      <div class="product-card__img-wrap">
+        <a href="{{ request.url_for('detail') }}?id={{ product.id }}">
+          <img src="{{ product.ImageURL }}" alt="{{ product.name }}" class="product-card__img"
+               onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+        </a>
+        {% if product.stock == 0 %}
+        <span class="product-card__badge badge-out">Hết hàng</span>
+        {% elif product.stock <= 3 %}
+        <span class="product-card__badge badge-low">Sắp hết</span>
+        {% else %}
+        <span class="product-card__badge badge-new">Mới</span>
+        {% endif %}
+      </div>
+      <div class="product-card__body">
+        <div>{% for cat in product.categories %}<span class="category-badge">{{ cat.name }}</span>{% endfor %}</div>
+        <div class="product-card__name">
+          <a href="{{ request.url_for('detail') }}?id={{ product.id }}">{{ product.name }}</a>
+        </div>
+        {% if product.cpu or product.ram %}
+        <div class="product-card__specs">
+          {% if product.cpu %}{{ product.cpu }}{% endif %}{% if product.ram %} · {{ product.ram }}{% endif %}
+        </div>
+        {% endif %}
+        <div class="product-card__price">{{ product.price|vnd }}đ</div>
+        <div class="product-card__actions">
+          <button data-product="{{ product.id }}" data-action="add"
+                  class="btn-add-cart add-btn update-cart"
+                  {% if product.stock == 0 %}disabled{% endif %}>
+            🛒 Thêm vào giỏ
+          </button>
+          <a href="{{ request.url_for('detail') }}?id={{ product.id }}" class="btn-view">Xem</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12 text-center py-5">
+    <div style="font-size:3rem;margin-bottom:12px;">🔍</div>
+    <h5 style="color:var(--text);">Không tìm thấy sản phẩm nào</h5>
+    <p style="color:var(--text-muted);">Thử từ khóa khác hoặc <a href="{{ request.url_for('home') }}">xem tất cả sản phẩm</a></p>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 bg-white rounded-4 shadow-sm">
+  <div style="font-size:3rem;margin-bottom:12px;">🔍</div>
+  <p style="color:var(--text-muted);">Nhập từ khóa để tìm kiếm sản phẩm</p>
+</div>
+{% endif %}
+{% endblock %}

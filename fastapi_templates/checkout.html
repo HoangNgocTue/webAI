@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content_checkout %}
+<div style="padding-top:10px;">
+  <h2 style="font-weight:800;color:var(--text);margin-bottom:4px;">Xác nhận đặt hàng</h2>
+  <p style="color:var(--text-muted);margin-bottom:28px;">Kiểm tra lại đơn hàng trước khi thanh toán</p>
+
+  {% if order and items %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">📦 Sản phẩm đặt mua</h6>
+        {% for item in items %}
+        {% if item.product %}
+        <div class="d-flex align-items-center gap-3 mb-3 pb-3" style="border-bottom:1px solid var(--border);">
+          <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}"
+               style="width:60px;height:60px;object-fit:contain;border-radius:8px;border:1px solid var(--border);padding:4px;"
+               onerror="this.style.display='none'">
+          <div style="flex:1;">
+            <div style="font-weight:600;color:var(--text);">{{ item.product.name }}</div>
+            <div style="color:var(--text-muted);font-size:0.85rem;">{{ item.product.price|vnd }}đ × {{ item.quantity }}</div>
+          </div>
+          <div style="font-weight:700;color:var(--accent);">{{ item.get_total|vnd }}đ</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">💳 Thanh toán</h6>
+        <div class="d-flex justify-content-between mb-2">
+          <span style="color:var(--text-muted);">Tạm tính</span>
+          <span style="font-weight:600;">{{ order.get_cart_total|vnd }}đ</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span style="color:var(--text-muted);">Phí giao hàng</span>
+          <span style="font-weight:600;color:#22c55e;">Miễn phí</span>
+        </div>
+        <hr style="border-color:var(--border);">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <span style="font-weight:700;color:var(--text);font-size:1.05rem;">Tổng cộng</span>
+          <span style="font-weight:800;color:var(--accent);font-size:1.3rem;">{{ order.get_cart_total|vnd }}đ</span>
+        </div>
+
+        <form method="POST" action="{{ request.url_for('checkout_post') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn w-100"
+                  style="background:var(--accent);color:white;border-radius:10px;font-weight:700;padding:14px;font-size:1rem;">
+            ✅ Xác nhận đặt hàng
+          </button>
+        </form>
+        <a href="{{ request.url_for('cart') }}" class="btn w-100 mt-2"
+           style="background:#f0f4f8;color:var(--text);border-radius:10px;font-weight:500;">
+          ← Quay lại giỏ hàng
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+    <div style="font-size:3rem;margin-bottom:12px;">🛒</div>
+    <h5>Giỏ hàng trống</h5>
+    <a href="{{ request.url_for('home') }}" class="btn mt-3" style="background:var(--primary);color:white;border-radius:10px;">Mua sắm ngay</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

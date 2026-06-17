@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block main-content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div class="section-title mb-0">
+    {% if active_category %}
+    <span class="section-title-accent">{{ active_category }}</span>
+    {% else %}
+    <span class="section-title-accent">Tất cả</span> sản phẩm
+    {% endif %}
+  </div>
+  <span style="color:var(--text-muted);font-size:0.88rem;">{{ products|length }} sản phẩm</span>
+</div>
+
+<div class="row g-3">
+  {% for product in products %}
+  <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+    <div class="product-card">
+      <div class="product-card__img-wrap">
+        <a href="{{ request.url_for('detail') }}?id={{ product.id }}">
+          <img src="{{ product.ImageURL }}" alt="{{ product.name }}" class="product-card__img"
+               onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+        </a>
+        {% if product.stock == 0 %}
+        <span class="product-card__badge badge-out">Hết hàng</span>
+        {% elif product.stock <= 3 %}
+        <span class="product-card__badge badge-low">Sắp hết</span>
+        {% else %}
+        <span class="product-card__badge badge-new">Mới</span>
+        {% endif %}
+      </div>
+      <div class="product-card__body">
+        <div>{% for cat in product.categories %}<span class="category-badge">{{ cat.name }}</span>{% endfor %}</div>
+        <div class="product-card__name">
+          <a href="{{ request.url_for('detail') }}?id={{ product.id }}">{{ product.name }}</a>
+        </div>
+        {% if product.cpu or product.ram %}
+        <div class="product-card__specs">
+          {% if product.cpu %}{{ product.cpu }}{% endif %}{% if product.ram %} · {{ product.ram }}{% endif %}
+        </div>
+        {% endif %}
+        <div class="product-card__price">{{ product.price|vnd }}đ</div>
+        <div class="product-card__actions">
+          <button data-product="{{ product.id }}" data-action="add"
+                  class="btn-add-cart add-btn update-cart"
+                  {% if product.stock == 0 %}disabled{% endif %}>
+            🛒 Thêm vào giỏ
+          </button>
+          <a href="{{ request.url_for('detail') }}?id={{ product.id }}" class="btn-view">Xem</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12 text-center py-5 text-muted">
+    <div style="font-size:3rem;margin-bottom:12px;">📦</div>
+    Không có sản phẩm nào trong danh mục này.
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
