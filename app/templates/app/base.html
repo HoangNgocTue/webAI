@@ -522,8 +522,9 @@
         }
 
         async function enhanceProductPreview(messageElement, rawMessage) {
-            const ids = [...rawMessage.matchAll(/\/detail\/?\?id=(\d+)/g)]
-                .map(match => match[1])
+            const markerIds = [...rawMessage.matchAll(/<!--\s*PRODUCT:(\d+)\s*-->/g)].map(match => match[1]);
+            const linkIds = [...rawMessage.matchAll(/\/detail\/?\?id=(\d+)/g)].map(match => match[1]);
+            const ids = [...markerIds, ...linkIds]
                 .filter((id, index, arr) => arr.indexOf(id) === index);
             if (!ids.length) return;
 
