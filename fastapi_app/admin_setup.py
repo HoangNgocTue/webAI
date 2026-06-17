@@ -10,7 +10,8 @@ from .database import SessionLocal, engine
 from .models import User, Product, Category, Order, OrderItem, Invoice, SupportTicket
 from .auth import check_django_password
 
-ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY", os.getenv("SECRET_KEY", "danang-admin-dev-secret"))
+# Must match app SessionMiddleware key so /admin/ can read the same session cookie
+ADMIN_SECRET = os.getenv("SECRET_KEY", "danang-store-dev-secret-change-in-production")
 
 
 class StoreAdminAuth(AuthenticationBackend):
