@@ -31,9 +31,13 @@ STATUS_LABELS = {
 }
 
 
-def _require_admin(ctx: BaseContext):
+def _require_admin(request: Request, ctx: BaseContext):
     if not ctx.current_user or not (ctx.current_user.is_staff or ctx.current_user.is_superuser):
         return RedirectResponse("/quan-tri/login/", status_code=302)
+    # Keep admin_user in sync so SQLAdmin can also read the session
+    if "admin_user" not in request.session:
+        request.session["admin_user"] = ctx.current_user.username
+        request.session["admin_id"] = ctx.current_user.id
     return None
 
 
@@ -83,7 +87,7 @@ def _open_count(db) -> int:
 
 @router.get("/", name="admin_dashboard")
 async def dashboard(request: Request, ctx: BaseContext = Depends(BaseContext)):
-    redirect = _require_admin(ctx)
+    redirect = _require_admin(request, ctx)
     if redirect:
         return redirect
 
@@ -171,7 +175,7 @@ async def dashboard(request: Request, ctx: BaseContext = Depends(BaseContext)):
 
 @router.get("/tickets/", name="admin_tickets")
 async def ticket_list(request: Request, ctx: BaseContext = Depends(BaseContext)):
-    redirect = _require_admin(ctx)
+    redirect = _require_admin(request, ctx)
     if redirect:
         return redirect
 
@@ -195,7 +199,7 @@ async def ticket_list(request: Request, ctx: BaseContext = Depends(BaseContext))
 
 @router.get("/tickets/{ticket_id}/", name="admin_ticket_detail")
 async def ticket_detail(ticket_id: str, request: Request, ctx: BaseContext = Depends(BaseContext)):
-    redirect = _require_admin(ctx)
+    redirect = _require_admin(request, ctx)
     if redirect:
         return redirect
 
@@ -216,7 +220,7 @@ async def ticket_detail(ticket_id: str, request: Request, ctx: BaseContext = Dep
 
 @router.post("/tickets/{ticket_id}/reply/", name="admin_ticket_reply")
 async def ticket_reply(ticket_id: str, request: Request, ctx: BaseContext = Depends(BaseContext)):
-    redirect = _require_admin(ctx)
+    redirect = _require_admin(request, ctx)
     if redirect:
         return redirect
 
@@ -287,7 +291,7 @@ async def ticket_reply(ticket_id: str, request: Request, ctx: BaseContext = Depe
 
 @router.post("/tickets/{ticket_id}/status/", name="admin_ticket_status")
 async def ticket_status(ticket_id: str, request: Request, ctx: BaseContext = Depends(BaseContext)):
-    redirect = _require_admin(ctx)
+    redirect = _require_admin(request, ctx)
     if redirect:
         return redirect
 
