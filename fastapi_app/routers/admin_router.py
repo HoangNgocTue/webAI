@@ -7,8 +7,9 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy import func, extract
 
 from ..dependencies import BaseContext
-from ..database import get_db
+from ..database import SessionLocal
 from ..models import User, Order, OrderItem, Product, SupportTicket
+from ..auth import check_django_password
 from ..email_service import _send
 from ..templates_config import templates
 
@@ -32,8 +33,47 @@ STATUS_LABELS = {
 
 def _require_admin(ctx: BaseContext):
     if not ctx.current_user or not (ctx.current_user.is_staff or ctx.current_user.is_superuser):
-        return RedirectResponse("/login/", status_code=302)
+        return RedirectResponse("/quan-tri/login/", status_code=302)
     return None
+
+
+# ─── Admin Login ──────────────────────────────────────────────────────────────
+
+@router.get("/login/", name="admin_login")
+async def admin_login_get(request: Request, ctx: BaseContext = Depends(BaseContext)):
+    if ctx.current_user and (ctx.current_user.is_staff or ctx.current_user.is_superuser):
+        return RedirectResponse("/quan-tri/", status_code=302)
+    return templates.TemplateResponse(request, "admin_login.html", {"request": request, "error": None})
+
+
+@router.post("/login/", name="admin_login_post")
+async def admin_login_post(request: Request, ctx: BaseContext = Depends(BaseContext)):
+    form = await request.form()
+    username = form.get("username", "").strip()
+    password = form.get("password", "")
+
+    db = SessionLocal()
+    try:
+        user = (
+            db.query(User)
+            .filter(User.username == username, User.is_active == True)
+            .first()
+        )
+        is_admin = user and (user.is_staff or user.is_superuser)
+        if is_admin and check_django_password(password, user.password):
+            request.session["user_id"] = user.id
+            request.session["admin_user"] = user.username
+            request.session["admin_id"] = user.id
+            user.last_login = datetime.utcnow()
+            db.commit()
+            return RedirectResponse("/quan-tri/", status_code=302)
+    finally:
+        db.close()
+
+    return templates.TemplateResponse(
+        request, "admin_login.html",
+        {"request": request, "error": "Tên đăng nhập / mật khẩu không đúng hoặc tài khoản không có quyền admin."}
+    )
 
 def _open_count(db) -> int:
     return db.query(func.count(SupportTicket.id)).filter(SupportTicket.status == "open").scalar() or 0
