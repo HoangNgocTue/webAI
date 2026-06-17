@@ -1316,8 +1316,7 @@ def build_fallback_reply(products: list, filters: dict) -> str:
 
     return (
         "Mình tìm thấy vài lựa chọn phù hợp:\n\n"
-        f"{format_products_for_response(products)}\n\n"
-        "Bạn có thể bấm vào ảnh sản phẩm bên dưới để xem thêm cấu hình và đặt hàng."
+        f"{format_products_for_response(products)}"
     )
 
 
