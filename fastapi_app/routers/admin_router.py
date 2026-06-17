@@ -35,6 +35,9 @@ def _require_admin(ctx: BaseContext):
         return RedirectResponse("/login/", status_code=302)
     return None
 
+def _open_count(db) -> int:
+    return db.query(func.count(SupportTicket.id)).filter(SupportTicket.status == "open").scalar() or 0
+
 
 # ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -118,7 +121,9 @@ async def dashboard(request: Request, ctx: BaseContext = Depends(BaseContext)):
         top_products=top_products,
         months_data=json.dumps(months_data),
         open_tickets=open_tickets,
+        open_ticket_count=len(open_tickets),
         category_labels=CATEGORY_LABELS,
+        active_page="dashboard",
     ))
 
 
@@ -141,6 +146,8 @@ async def ticket_list(request: Request, ctx: BaseContext = Depends(BaseContext))
         status_filter=status_filter,
         category_labels=CATEGORY_LABELS,
         status_labels=STATUS_LABELS,
+        open_ticket_count=_open_count(ctx.db),
+        active_page="tickets",
     ))
 
 
@@ -160,6 +167,8 @@ async def ticket_detail(ticket_id: str, request: Request, ctx: BaseContext = Dep
         ticket=ticket,
         category_labels=CATEGORY_LABELS,
         status_labels=STATUS_LABELS,
+        open_ticket_count=_open_count(ctx.db),
+        active_page="tickets",
         success=False,
         error=None,
     ))
@@ -229,6 +238,8 @@ async def ticket_reply(ticket_id: str, request: Request, ctx: BaseContext = Depe
         ticket=ticket,
         category_labels=CATEGORY_LABELS,
         status_labels=STATUS_LABELS,
+        open_ticket_count=_open_count(ctx.db),
+        active_page="tickets",
         success=success,
         error=error,
     ))

@@ -1,215 +1,228 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_icon %}📊{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-{% block main_content %}
-<div style="padding-top:10px;">
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-      <h2 style="font-weight:800;color:var(--text);margin-bottom:4px;">📊 Dashboard Quản trị</h2>
-      <p style="color:var(--text-muted);margin:0;font-size:0.9rem;">Tổng quan hoạt động cửa hàng</p>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{{ request.url_for('admin_tickets') }}" class="btn"
-         style="background:#f97316;color:white;border-radius:10px;font-weight:600;font-size:0.88rem;">
-        🎫 Quản lý Ticket {% if open_tickets %}<span style="background:white;color:#f97316;border-radius:999px;padding:1px 7px;font-size:0.78rem;margin-left:4px;">{{ open_tickets|length }}</span>{% endif %}
-      </a>
-      <a href="/admin/" class="btn"
-         style="background:var(--primary);color:white;border-radius:10px;font-weight:600;font-size:0.88rem;">
-        ⚙️ SQLAdmin Panel
-      </a>
-    </div>
-  </div>
+{% block content %}
 
-  <!-- Stats Cards -->
-  <div class="row g-3 mb-4">
-    <div class="col-lg-3 col-md-6 col-6">
-      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
-        <div style="font-size:2rem;margin-bottom:6px;">💰</div>
-        <div style="font-size:1.4rem;font-weight:800;color:#f97316;">{{ total_revenue }}đ</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Tổng doanh thu</div>
-      </div>
-    </div>
-    <div class="col-lg-3 col-md-6 col-6">
-      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
-        <div style="font-size:2rem;margin-bottom:6px;">🛒</div>
-        <div style="font-size:1.4rem;font-weight:800;color:var(--primary);">{{ total_orders }}</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Tổng đơn hàng</div>
-      </div>
-    </div>
-    <div class="col-lg-3 col-md-6 col-6">
-      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
-        <div style="font-size:2rem;margin-bottom:6px;">👥</div>
-        <div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ total_customers }}</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Khách hàng</div>
-      </div>
-    </div>
-    <div class="col-lg-3 col-md-6 col-6">
-      <div class="bg-white rounded-4 shadow-sm p-4 text-center" style="border:1px solid var(--border);">
-        <div style="font-size:2rem;margin-bottom:6px;">📦</div>
-        <div style="font-size:1.4rem;font-weight:800;color:#8b5cf6;">{{ total_products }}</div>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Sản phẩm (tồn: {{ total_stock }})</div>
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-xl-3 col-md-6">
+    <div class="adm-stat">
+      <div class="adm-stat-icon" style="background:#fff7ed;">💰</div>
+      <div>
+        <div class="adm-stat-val" style="color:#f97316;">{{ total_revenue }}đ</div>
+        <div class="adm-stat-lbl">Tổng doanh thu</div>
       </div>
     </div>
   </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="adm-stat">
+      <div class="adm-stat-icon" style="background:#eff6ff;">🛒</div>
+      <div>
+        <div class="adm-stat-val" style="color:var(--primary);">{{ total_orders }}</div>
+        <div class="adm-stat-lbl">Tổng đơn hàng</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="adm-stat">
+      <div class="adm-stat-icon" style="background:#f0fdf4;">👥</div>
+      <div>
+        <div class="adm-stat-val" style="color:#16a34a;">{{ total_customers }}</div>
+        <div class="adm-stat-lbl">Khách hàng</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6">
+    <div class="adm-stat">
+      <div class="adm-stat-icon" style="background:#faf5ff;">📦</div>
+      <div>
+        <div class="adm-stat-val" style="color:#7c3aed;">{{ total_products }}</div>
+        <div class="adm-stat-lbl">Sản phẩm · tồn {{ total_stock }}</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <div class="row g-4 mb-4">
-    <!-- Order Status -->
-    <div class="col-md-4">
-      <div class="bg-white rounded-4 shadow-sm p-4 h-100" style="border:1px solid var(--border);">
-        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">📋 Trạng thái đơn hàng</h6>
-        <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3" style="background:#fff7ed;">
-          <div style="width:40px;height:40px;border-radius:10px;background:#f97316;color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">⏳</div>
-          <div style="flex:1;"><div style="font-size:0.88rem;color:var(--text-muted);">Chờ duyệt</div></div>
-          <div style="font-size:1.4rem;font-weight:800;color:#f97316;">{{ orders_pending }}</div>
-        </div>
-        <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3" style="background:#f0fdf4;">
-          <div style="width:40px;height:40px;border-radius:10px;background:#22c55e;color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">✅</div>
-          <div style="flex:1;"><div style="font-size:0.88rem;color:var(--text-muted);">Đã duyệt</div></div>
-          <div style="font-size:1.4rem;font-weight:800;color:#22c55e;">{{ orders_approved }}</div>
-        </div>
-        <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:#fef2f2;">
-          <div style="width:40px;height:40px;border-radius:10px;background:#ef4444;color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">❌</div>
-          <div style="flex:1;"><div style="font-size:0.88rem;color:var(--text-muted);">Đã hủy</div></div>
-          <div style="font-size:1.4rem;font-weight:800;color:#ef4444;">{{ orders_canceled }}</div>
+<!-- Row 2: Order status + Top products -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="adm-card h-100">
+      <div class="adm-card-header">
+        <span class="adm-card-title">📋 Trạng thái đơn hàng</span>
+        <a href="/admin/order/list/" class="adm-btn adm-btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Xem tất cả</a>
+      </div>
+      <div class="adm-card-body">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff7ed;border-radius:10px;border-left:4px solid #f97316;">
+            <span style="font-size:1.4rem;">⏳</span>
+            <div style="flex:1;">
+              <div style="font-size:0.82rem;color:var(--text-muted);font-weight:500;">Chờ duyệt</div>
+            </div>
+            <div style="font-size:1.6rem;font-weight:800;color:#f97316;">{{ orders_pending }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#f0fdf4;border-radius:10px;border-left:4px solid #22c55e;">
+            <span style="font-size:1.4rem;">✅</span>
+            <div style="flex:1;">
+              <div style="font-size:0.82rem;color:var(--text-muted);font-weight:500;">Đã duyệt</div>
+            </div>
+            <div style="font-size:1.6rem;font-weight:800;color:#22c55e;">{{ orders_approved }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#fef2f2;border-radius:10px;border-left:4px solid #ef4444;">
+            <span style="font-size:1.4rem;">❌</span>
+            <div style="flex:1;">
+              <div style="font-size:0.82rem;color:var(--text-muted);font-weight:500;">Đã hủy</div>
+            </div>
+            <div style="font-size:1.6rem;font-weight:800;color:#ef4444;">{{ orders_canceled }}</div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Top Products -->
-    <div class="col-md-8">
-      <div class="bg-white rounded-4 shadow-sm p-4 h-100" style="border:1px solid var(--border);">
-        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">🏆 Top sản phẩm bán chạy</h6>
-        {% for product in top_products %}
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <div style="width:30px;height:30px;border-radius:8px;background:{% if loop.index == 1 %}#fbbf24{% elif loop.index == 2 %}#94a3b8{% elif loop.index == 3 %}#f97316{% else %}var(--primary){% endif %};
-                      color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;">
+  <div class="col-lg-8">
+    <div class="adm-card h-100">
+      <div class="adm-card-header">
+        <span class="adm-card-title">🏆 Top sản phẩm bán chạy</span>
+      </div>
+      <div class="adm-card-body" style="padding:0;">
+        {% for p in top_products %}
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;
+                    border-bottom:{% if not loop.last %}1px solid #f1f5f9{% else %}none{% endif %};">
+          <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;
+                      background:{% if loop.index==1 %}linear-gradient(135deg,#f59e0b,#fbbf24){% elif loop.index==2 %}linear-gradient(135deg,#94a3b8,#cbd5e1){% elif loop.index==3 %}linear-gradient(135deg,#f97316,#fb923c){% else %}var(--primary){% endif %};
+                      color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;">
             {{ loop.index }}
           </div>
-          <div style="flex:1;font-size:0.88rem;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ product[1] }}</div>
-          <span style="background:#dbeafe;color:#1d4ed8;padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;white-space:nowrap;">
-            {{ product[2] }} đã bán
+          <div style="flex:1;font-size:0.88rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p[1] }}</div>
+          <span class="adm-pill" style="background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe;">
+            {{ p[2] }} đã bán
           </span>
         </div>
         {% else %}
-        <p style="color:var(--text-muted);font-size:0.88rem;">Chưa có dữ liệu bán hàng.</p>
+        <div style="padding:32px;text-align:center;color:var(--text-muted);font-size:0.88rem;">Chưa có dữ liệu.</div>
         {% endfor %}
       </div>
     </div>
   </div>
-
-  <!-- Revenue Chart -->
-  <div class="bg-white rounded-4 shadow-sm p-4 mb-4" style="border:1px solid var(--border);">
-    <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">📈 Doanh thu 12 tháng gần đây</h6>
-    <canvas id="revenueChart" height="70"></canvas>
-  </div>
-
-  <div class="row g-4">
-    <!-- Recent Orders -->
-    <div class="col-md-7">
-      <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h6 style="font-weight:700;color:var(--text);margin:0;">🛒 Đơn hàng gần đây</h6>
-          <a href="/admin/order/list/" style="font-size:0.8rem;color:var(--primary);">Xem tất cả →</a>
-        </div>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;font-size:0.83rem;border-collapse:collapse;">
-            <thead>
-              <tr style="border-bottom:2px solid #e2e8f0;color:var(--text-muted);">
-                <th style="padding:8px 6px;font-weight:600;text-align:left;">#</th>
-                <th style="padding:8px 6px;font-weight:600;text-align:left;">Khách</th>
-                <th style="padding:8px 6px;font-weight:600;text-align:left;">Trạng thái</th>
-                <th style="padding:8px 6px;font-weight:600;text-align:left;">Ngày</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for order, username in recent_orders %}
-              <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:8px 6px;font-weight:600;color:var(--primary);">#{{ order.id }}</td>
-                <td style="padding:8px 6px;color:var(--text);">{{ username or 'Khách' }}</td>
-                <td style="padding:8px 6px;">
-                  {% if order.status == 'pending' %}
-                  <span style="background:#fff7ed;color:#f97316;padding:2px 8px;border-radius:20px;font-size:0.75rem;font-weight:600;">Chờ duyệt</span>
-                  {% elif order.status == 'approved' %}
-                  <span style="background:#f0fdf4;color:#22c55e;padding:2px 8px;border-radius:20px;font-size:0.75rem;font-weight:600;">Đã duyệt</span>
-                  {% elif order.status == 'canceled' %}
-                  <span style="background:#fef2f2;color:#ef4444;padding:2px 8px;border-radius:20px;font-size:0.75rem;font-weight:600;">Đã hủy</span>
-                  {% else %}
-                  <span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:20px;font-size:0.75rem;font-weight:600;">{{ order.status }}</span>
-                  {% endif %}
-                </td>
-                <td style="padding:8px 6px;color:var(--text-muted);">
-                  {{ order.date_order.strftime('%d/%m/%Y') if order.date_order else '-' }}
-                </td>
-              </tr>
-              {% else %}
-              <tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text-muted);">Chưa có đơn hàng.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Open Tickets -->
-    <div class="col-md-5">
-      <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h6 style="font-weight:700;color:var(--text);margin:0;">🎫 Ticket chờ xử lý</h6>
-          <a href="{{ request.url_for('admin_tickets') }}" style="font-size:0.8rem;color:var(--primary);">Xem tất cả →</a>
-        </div>
-        {% for ticket in open_tickets %}
-        <a href="{{ request.url_for('admin_ticket_detail', ticket_id=ticket.ticket_id) }}"
-           style="display:block;text-decoration:none;padding:10px 12px;border-radius:10px;
-                  border:1px solid #fde68a;background:#fffbeb;margin-bottom:8px;transition:box-shadow 0.2s;"
-           onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
-          <div class="d-flex justify-content-between align-items-start">
-            <span style="font-size:0.78rem;font-weight:700;color:#92400e;">{{ ticket.ticket_id }}</span>
-            <span style="font-size:0.72rem;color:#d97706;">{{ ticket.created_at.strftime('%d/%m') }}</span>
-          </div>
-          <div style="font-size:0.82rem;color:#78350f;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            {{ category_labels.get(ticket.category, ticket.category) }}
-          </div>
-          <div style="font-size:0.78rem;color:#92400e;margin-top:2px;">📧 {{ ticket.customer_email or 'N/A' }}</div>
-        </a>
-        {% else %}
-        <div style="text-align:center;padding:24px;color:var(--text-muted);">
-          <div style="font-size:2rem;margin-bottom:8px;">✅</div>
-          <div style="font-size:0.88rem;">Không có ticket nào chờ xử lý!</div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
 </div>
 
+<!-- Revenue Chart -->
+<div class="adm-card mb-4">
+  <div class="adm-card-header">
+    <span class="adm-card-title">📈 Doanh thu 12 tháng gần đây</span>
+  </div>
+  <div class="adm-card-body">
+    <canvas id="revenueChart" height="65"></canvas>
+  </div>
+</div>
+
+<!-- Row 3: Recent orders + Open tickets -->
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <span class="adm-card-title">🛒 Đơn hàng gần đây</span>
+        <a href="/admin/order/list/" class="adm-btn adm-btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Xem tất cả</a>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Khách hàng</th><th>Trạng thái</th><th>Ngày đặt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order, username in recent_orders %}
+            <tr>
+              <td><span style="font-weight:700;color:var(--primary);">#{{ order.id }}</span></td>
+              <td style="font-weight:500;">{{ username or 'Khách vãng lai' }}</td>
+              <td>
+                {% if order.status == 'pending' %}
+                <span class="adm-pill" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa;">⏳ Chờ duyệt</span>
+                {% elif order.status == 'approved' %}
+                <span class="adm-pill" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0;">✅ Đã duyệt</span>
+                {% elif order.status == 'canceled' %}
+                <span class="adm-pill" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;">❌ Đã hủy</span>
+                {% else %}
+                <span class="adm-pill" style="background:#f8fafc;color:#475569;border-color:#e2e8f0;">{{ order.status }}</span>
+                {% endif %}
+              </td>
+              <td style="color:var(--text-muted);">{{ order.date_order.strftime('%d/%m/%Y') if order.date_order else '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">Chưa có đơn hàng.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <span class="adm-card-title">🎫 Ticket chờ xử lý</span>
+        <a href="{{ request.url_for('admin_tickets') }}" class="adm-btn adm-btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Xem tất cả</a>
+      </div>
+      <div class="adm-card-body" style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+        {% for ticket in open_tickets %}
+        <a href="{{ request.url_for('admin_ticket_detail', ticket_id=ticket.ticket_id) }}"
+           style="display:block;text-decoration:none;padding:11px 14px;border-radius:10px;
+                  background:#fffbeb;border:1px solid #fde68a;
+                  transition:box-shadow 0.15s,transform 0.15s;"
+           onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';this.style.transform='translateY(-1px)'"
+           onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:0.78rem;font-weight:800;color:#92400e;letter-spacing:0.5px;">{{ ticket.ticket_id }}</span>
+            <span style="font-size:0.72rem;color:#d97706;">{{ ticket.created_at.strftime('%d/%m/%Y') }}</span>
+          </div>
+          <div style="font-size:0.82rem;color:#78350f;font-weight:500;margin-bottom:2px;">{{ category_labels.get(ticket.category, ticket.category) }}</div>
+          <div style="font-size:0.75rem;color:#92400e;">📧 {{ ticket.customer_email or 'N/A' }}</div>
+        </a>
+        {% else %}
+        <div style="text-align:center;padding:28px 0;color:var(--text-muted);">
+          <div style="font-size:2.2rem;margin-bottom:8px;">🎉</div>
+          <div style="font-size:0.85rem;font-weight:500;">Không có ticket chờ xử lý</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const monthsData = {{ months_data | safe }};
-const ctx2 = document.getElementById('revenueChart').getContext('2d');
-new Chart(ctx2, {
-    type: 'bar',
-    data: {
-        labels: monthsData.map(d => d.month),
-        datasets: [{
-            label: 'Doanh thu (VNĐ)',
-            data: monthsData.map(d => d.revenue),
-            backgroundColor: 'rgba(78,174,185,0.65)',
-            borderColor: 'rgba(78,174,185,1)',
-            borderWidth: 1,
-            borderRadius: 6,
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('vi-VN') + 'đ' } }
-        }
+const md = {{ months_data | safe }};
+new Chart(document.getElementById('revenueChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: md.map(d => d.month),
+    datasets: [{
+      data: md.map(d => d.revenue),
+      backgroundColor: 'rgba(14,116,144,0.55)',
+      borderColor:     'rgba(14,116,144,0.9)',
+      borderWidth: 1, borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: {
+      callbacks: { label: ctx => ' ' + ctx.raw.toLocaleString('vi-VN') + 'đ' }
+    }},
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#f1f5f9' },
+           ticks: { callback: v => (v/1000000).toFixed(1) + 'M', font: { size: 11 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
     }
+  }
 });
 </script>
-{% endblock %}
 {% endblock %}
