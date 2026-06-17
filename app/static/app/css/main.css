@@ -366,8 +366,9 @@ h1, h2, h3, h4, h5, h6 {
 /* =============================================
    Main Content Offset
    ============================================= */
-main {
-  margin-top: calc(36px + 70px + 48px + 16px);
+.site-main {
+  background: var(--bg);
+  margin-top: calc(36px + 70px + 48px + 20px);
   padding: 20px 20px 40px;
 }
 
@@ -924,7 +925,7 @@ main {
    ============================================= */
 @media (max-width: 768px) {
   .topbar .topbar-promo { display: none; }
-  main { margin-top: calc(36px + 60px + 48px + 8px); }
+  .site-main { margin-top: calc(36px + 60px + 48px + 16px); }
   .header-logo-text { font-size: 1rem; }
   .header-search { max-width: 100%; }
   .cat-nav-inner { gap: 0; }
