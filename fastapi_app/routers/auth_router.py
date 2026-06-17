@@ -29,9 +29,10 @@ async def login_post(request: Request, ctx: BaseContext = Depends(BaseContext)):
     user = ctx.db.query(User).filter(User.username == username, User.is_active == True).first()
     if user and check_django_password(password, user.password):
         request.session["user_id"] = user.id
-        # Update last_login like Django does
         user.last_login = datetime.utcnow()
         ctx.db.commit()
+        if user.is_staff or user.is_superuser:
+            return RedirectResponse("/admin/", status_code=302)
         return RedirectResponse(request.url_for("home"), status_code=302)
     return templates.TemplateResponse(request, "login.html", ctx.dict(error="Tên đăng nhập hoặc mật khẩu không đúng!"))
 

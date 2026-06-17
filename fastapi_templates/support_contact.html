@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div style="max-width:680px;margin:0 auto;padding:10px 0 40px;">
+
+  <!-- Header -->
+  <div style="text-align:center;margin-bottom:32px;">
+    <div style="font-size:3rem;margin-bottom:12px;">🛠️</div>
+    <h2 style="font-weight:800;color:var(--text);margin-bottom:8px;">Liên hệ Kỹ thuật viên</h2>
+    <p style="color:var(--text-muted);font-size:0.95rem;">
+      Điền thông tin bên dưới, kỹ thuật viên sẽ liên hệ lại với bạn trong <strong>vòng 24 giờ</strong>.
+    </p>
+  </div>
+
+  <!-- Success -->
+  {% if success %}
+  <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:16px;padding:28px 32px;text-align:center;margin-bottom:24px;">
+    <div style="font-size:2.5rem;margin-bottom:12px;">✅</div>
+    <h4 style="color:#16a34a;font-weight:700;margin-bottom:8px;">Gửi yêu cầu thành công!</h4>
+    <p style="color:#166534;margin-bottom:12px;">
+      Mã ticket của bạn: <strong style="font-size:1.15rem;letter-spacing:1px;">{{ ticket_id }}</strong>
+    </p>
+    <p style="color:#166534;font-size:0.9rem;margin-bottom:20px;">
+      Email xác nhận đã được gửi đến hộp thư của bạn.<br>
+      Kỹ thuật viên sẽ liên hệ sớm nhất có thể.
+    </p>
+    <a href="{{ request.url_for('home') }}" class="btn"
+       style="background:var(--primary);color:white;border-radius:10px;padding:10px 28px;font-weight:600;text-decoration:none;">
+      Về trang chủ
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Errors -->
+  {% if errors %}
+  <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+    {% for err in errors %}
+    <div style="color:#dc2626;font-size:0.9rem;margin-bottom:4px;">⚠ {{ err }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Form -->
+  {% if not success %}
+  <div style="background:white;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:36px 40px;border:1px solid var(--border);">
+
+    <!-- Info banner -->
+    <div style="background:#eff6ff;border-radius:12px;padding:14px 18px;margin-bottom:28px;display:flex;gap:12px;align-items:flex-start;">
+      <span style="font-size:1.3rem;">💬</span>
+      <div style="font-size:0.88rem;color:#1e40af;">
+        Bạn cũng có thể nhắn tin qua chatbot ở góc phải màn hình. Tuy nhiên nếu cần <strong>hỗ trợ trực tiếp từ kỹ thuật viên</strong>, hãy điền form này để được ưu tiên xử lý.
+      </div>
+    </div>
+
+    <form method="post" action="{{ request.url_for('support_contact_post') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="row g-3">
+        <!-- Họ tên -->
+        <div class="col-md-6">
+          <label style="font-weight:600;font-size:0.9rem;color:var(--text);margin-bottom:6px;display:block;">
+            Họ và tên <span style="color:#ef4444;">*</span>
+          </label>
+          <input type="text" name="name" required
+                 value="{{ form_data.name if form_data else '' }}"
+                 placeholder="Nguyễn Văn A"
+                 style="width:100%;padding:11px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;transition:border-color 0.2s;"
+                 onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+
+        <!-- Email -->
+        <div class="col-md-6">
+          <label style="font-weight:600;font-size:0.9rem;color:var(--text);margin-bottom:6px;display:block;">
+            Email <span style="color:#ef4444;">*</span>
+          </label>
+          <input type="email" name="email" required
+                 value="{{ form_data.email if form_data else (current_user.email if current_user else '') }}"
+                 placeholder="email@example.com"
+                 style="width:100%;padding:11px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;transition:border-color 0.2s;"
+                 onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+
+        <!-- SĐT -->
+        <div class="col-md-6">
+          <label style="font-weight:600;font-size:0.9rem;color:var(--text);margin-bottom:6px;display:block;">
+            Số điện thoại <span style="color:var(--text-muted);font-weight:400;">(tùy chọn)</span>
+          </label>
+          <input type="tel" name="phone"
+                 value="{{ form_data.phone if form_data else '' }}"
+                 placeholder="0905 xxx xxx"
+                 style="width:100%;padding:11px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;transition:border-color 0.2s;"
+                 onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+
+        <!-- Danh mục -->
+        <div class="col-md-6">
+          <label style="font-weight:600;font-size:0.9rem;color:var(--text);margin-bottom:6px;display:block;">
+            Loại vấn đề <span style="color:#ef4444;">*</span>
+          </label>
+          <select name="category"
+                  style="width:100%;padding:11px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;background:white;cursor:pointer;transition:border-color 0.2s;"
+                  onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'">
+            {% for key, label in categories.items() %}
+            <option value="{{ key }}" {% if form_data and form_data.category == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Mô tả -->
+        <div class="col-12">
+          <label style="font-weight:600;font-size:0.9rem;color:var(--text);margin-bottom:6px;display:block;">
+            Mô tả vấn đề <span style="color:#ef4444;">*</span>
+          </label>
+          <textarea name="description" required rows="5"
+                    placeholder="Mô tả chi tiết vấn đề bạn đang gặp phải. Càng cụ thể, kỹ thuật viên càng hỗ trợ nhanh hơn..."
+                    style="width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;resize:vertical;transition:border-color 0.2s;"
+                    onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'">{{ form_data.description if form_data else '' }}</textarea>
+        </div>
+
+        <!-- Submit -->
+        <div class="col-12" style="margin-top:8px;">
+          <button type="submit"
+                  style="width:100%;padding:14px;background:var(--primary);color:white;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity 0.2s;"
+                  onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1">
+            🚀 Gửi yêu cầu hỗ trợ
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Thông tin liên hệ nhanh -->
+  <div class="row g-3 mt-2">
+    <div class="col-md-4">
+      <div style="background:white;border-radius:14px;padding:20px;text-align:center;border:1px solid var(--border);">
+        <div style="font-size:1.8rem;margin-bottom:8px;">📞</div>
+        <div style="font-weight:600;font-size:0.9rem;color:var(--text);">Hotline</div>
+        <div style="color:var(--primary);font-weight:700;">0905 123 456</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">8:00 – 21:00 mỗi ngày</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div style="background:white;border-radius:14px;padding:20px;text-align:center;border:1px solid var(--border);">
+        <div style="font-size:1.8rem;margin-bottom:8px;">📍</div>
+        <div style="font-weight:600;font-size:0.9rem;color:var(--text);">Địa chỉ</div>
+        <div style="color:var(--text);font-size:0.88rem;">123 Nguyễn Văn Linh</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">Đà Nẵng</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div style="background:white;border-radius:14px;padding:20px;text-align:center;border:1px solid var(--border);">
+        <div style="font-size:1.8rem;margin-bottom:8px;">⚡</div>
+        <div style="font-weight:600;font-size:0.9rem;color:var(--text);">Phản hồi</div>
+        <div style="color:var(--text);font-size:0.88rem;">Trong vòng 24 giờ</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">Qua email / điện thoại</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
