@@ -1,7 +1,11 @@
+import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from .database import engine
 from .admin_setup import setup_admin
@@ -9,28 +13,28 @@ from .routers import shop, auth_router, cart_router, orders_router, profile_rout
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+SECRET_KEY = os.getenv("SECRET_KEY", "danang-store-dev-secret-change-in-production")
+
 app = FastAPI(
     title="Đà Nẵng Store",
-    description="Cửa hàng công nghệ Đà Nẵng — FastAPI Edition",
+    description="Cửa hàng công nghệ Đà Nẵng",
     version="2.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
 
-# Session middleware (must be added before routes are used)
 app.add_middleware(
     SessionMiddleware,
-    secret_key="danang-store-session-secret-key-2024-change-in-prod",
-    max_age=86400,  # 24 hours
+    secret_key=SECRET_KEY,
+    max_age=86400,
 )
 
-# Static files — /static serves app/static/ (CSS, JS, images)
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "app" / "static")), name="static")
-# /images serves media/product images (MEDIA_ROOT equivalent)
-app.mount("/images", StaticFiles(directory=str(BASE_DIR / "app" / "static" / "images")), name="images")
+STATIC_DIR = BASE_DIR / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/images", StaticFiles(directory=str(STATIC_DIR / "images")), name="images")
 
-# SQLAdmin — modern admin panel at /admin
 setup_admin(app, engine)
 
-# Routers
 app.include_router(shop.router)
 app.include_router(auth_router.router)
 app.include_router(cart_router.router)

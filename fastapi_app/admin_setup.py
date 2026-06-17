@@ -1,10 +1,16 @@
+import os
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from fastapi import Request
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from .database import SessionLocal, engine
 from .models import User, Product, Category, Order, OrderItem, Invoice, SupportTicket
 from .auth import check_django_password
+
+ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY", os.getenv("SECRET_KEY", "danang-admin-dev-secret"))
 
 
 class StoreAdminAuth(AuthenticationBackend):
@@ -101,7 +107,7 @@ def setup_admin(app, engine):
     admin = Admin(
         app,
         engine,
-        authentication_backend=StoreAdminAuth(secret_key="danang-store-admin-secret-2024"),
+        authentication_backend=StoreAdminAuth(secret_key=ADMIN_SECRET),
         title="Đà Nẵng Store — Admin",
     )
     admin.add_view(UserAdmin)
