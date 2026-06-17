@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from fastapi import Request
@@ -9,6 +10,8 @@ load_dotenv()
 from .database import SessionLocal, engine
 from .models import User, Product, Category, Order, OrderItem, Invoice, SupportTicket
 from .auth import check_django_password
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Must match app SessionMiddleware key so /admin/ can read the same session cookie
 ADMIN_SECRET = os.getenv("SECRET_KEY", "danang-store-dev-secret-change-in-production")
@@ -110,6 +113,7 @@ def setup_admin(app, engine):
         engine,
         authentication_backend=StoreAdminAuth(secret_key=ADMIN_SECRET),
         title="Đà Nẵng Store — Admin",
+        templates_dir=str(BASE_DIR / "fastapi_templates"),
     )
     admin.add_view(UserAdmin)
     admin.add_view(CategoryAdmin)
