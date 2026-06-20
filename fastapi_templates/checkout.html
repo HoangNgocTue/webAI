@@ -46,6 +46,22 @@
 
         <form method="POST" action="{{ request.url_for('checkout_post') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+          <div style="margin-bottom:18px;">
+            <label class="d-flex align-items-center gap-2 mb-2" style="cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <input type="radio" name="payment_method" value="cod" checked>
+              <span style="font-weight:600;">💵 Thanh toán khi nhận hàng (COD)</span>
+            </label>
+            <label class="d-flex align-items-center gap-2 mb-2" style="cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <input type="radio" name="payment_method" value="vnpay">
+              <span style="font-weight:600;">🏦 Thanh toán qua VNPay</span>
+            </label>
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <input type="radio" name="payment_method" value="momo">
+              <span style="font-weight:600;">📱 Thanh toán qua MoMo</span>
+            </label>
+          </div>
+
           <button type="submit" class="btn w-100"
                   style="background:var(--accent);color:white;border-radius:10px;font-weight:700;padding:14px;font-size:1rem;">
             ✅ Xác nhận đặt hàng

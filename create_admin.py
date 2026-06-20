@@ -1,11 +1,19 @@
 """
 Tạo tài khoản admin: username=admin, password=123
-Chạy bên trong Docker: docker compose exec web python create_admin.py
+Chạy local:          python create_admin.py
+Chạy trong Docker:   docker compose exec web python create_admin.py
 """
 import sys
 import os
-sys.path.insert(0, "/app")
-os.chdir("/app")
+
+# Chỉ chdir vào /app khi đang chạy trong container Docker (đường dẫn đó tồn tại).
+# Chạy local thì giữ nguyên working directory hiện tại của người dùng.
+APP_DIR = "/app"
+if os.path.isdir(APP_DIR):
+    sys.path.insert(0, APP_DIR)
+    os.chdir(APP_DIR)
+else:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi_app.database import SessionLocal, engine, Base
 from fastapi_app.models import User

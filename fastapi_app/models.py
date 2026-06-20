@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, Numeric, Text, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from decimal import Decimal
+from datetime import datetime
 import uuid
 from .database import Base
 
@@ -32,7 +33,7 @@ class User(Base):
     email = Column(String(254), default="")
     is_staff = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
-    date_joined = Column(DateTime, default=func.now())
+    date_joined = Column(DateTime, default=datetime.utcnow)
 
     orders = relationship("Order", back_populates="customer")
     chat_histories = relationship("ChatHistory", back_populates="user")
@@ -90,11 +91,16 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("auth_user.id"), nullable=True)
-    date_order = Column(DateTime, default=func.now())
+    date_order = Column(DateTime, default=datetime.utcnow)
     complete = Column(Boolean, default=False)
     transaction_id = Column(String(200), nullable=True)
     approved_date = Column(DateTime, nullable=True)
     status = Column(String(20), default="pending")
+
+    # Payment fields
+    payment_method = Column(String(20), nullable=True)  # "vnpay" | "momo" | "cod"
+    payment_status = Column(String(20), default="unpaid")  # "unpaid" | "paid" | "failed"
+    payment_ref = Column(String(100), nullable=True)  # gateway transaction code (vnp_TxnRef / momo orderId)
 
     customer = relationship("User", back_populates="orders")
     order_items = relationship("OrderItem", back_populates="order")
@@ -117,7 +123,7 @@ class OrderItem(Base):
     product_id = Column(Integer, ForeignKey("app_product.id"), nullable=True)
     order_id = Column(Integer, ForeignKey("app_order.id"), nullable=True)
     quantity = Column(Integer, default=0)
-    date_added = Column(DateTime, default=func.now())
+    date_added = Column(DateTime, default=datetime.utcnow)
 
     product = relationship("Product", back_populates="order_items")
     order = relationship("Order", back_populates="order_items")
@@ -139,7 +145,7 @@ class ShippingAddress(Base):
     city = Column(String(200))
     state = Column(String(200))
     mobile = Column(String(10))
-    date_added = Column(DateTime, default=func.now())
+    date_added = Column(DateTime, default=datetime.utcnow)
 
     customer = relationship("User", back_populates="shipping_addresses")
     order = relationship("Order", back_populates="shipping_address")
@@ -150,7 +156,7 @@ class Invoice(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("app_order.id"), unique=True)
-    invoice_date = Column(DateTime, default=func.now())
+    invoice_date = Column(DateTime, default=datetime.utcnow)
     customer_id = Column(Integer, ForeignKey("auth_user.id"), nullable=True)
     total_amount = Column(Numeric(10, 2))
 
@@ -165,7 +171,7 @@ class ChatHistory(Base):
     user_id = Column(Integer, ForeignKey("auth_user.id"))
     message = Column(Text)
     reply = Column(Text)
-    created_at = Column(DateTime, default=func.now())
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="chat_histories")
 
@@ -188,8 +194,8 @@ class SupportTicket(Base):
     status = Column(String(20), default="open")
     customer_email = Column(String(254), nullable=True)
     staff_note = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_category_display(self):
         return self.CATEGORY_CHOICES.get(self.category, self.category)
