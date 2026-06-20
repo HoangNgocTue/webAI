@@ -7,6 +7,7 @@ from ..database import get_db
 from ..dependencies import BaseContext
 from ..models import User
 from ..auth import check_django_password, make_django_password
+from ..cart_utils import CHECKOUT_NEXT_KEY, merge_guest_cart_into_user
 from ..templates_config import templates
 
 router = APIRouter(tags=["auth"])
@@ -15,7 +16,8 @@ router = APIRouter(tags=["auth"])
 @router.get("/login/", name="login")
 async def login_get(request: Request, ctx: BaseContext = Depends(BaseContext)):
     if ctx.current_user:
-        return RedirectResponse(request.url_for("home"), status_code=302)
+        next_url = request.session.pop(CHECKOUT_NEXT_KEY, None) or str(request.url_for("home"))
+        return RedirectResponse(next_url, status_code=302)
     return templates.TemplateResponse(request, "login.html", ctx.dict(error=None))
 
 
@@ -29,9 +31,11 @@ async def login_post(request: Request, ctx: BaseContext = Depends(BaseContext)):
     user = ctx.db.query(User).filter(User.username == username, User.is_active == True).first()
     if user and check_django_password(password, user.password):
         request.session["user_id"] = user.id
+        merge_guest_cart_into_user(ctx.db, request, user)
         user.last_login = datetime.utcnow()
         ctx.db.commit()
-        return RedirectResponse(request.url_for("home"), status_code=302)
+        next_url = request.session.pop(CHECKOUT_NEXT_KEY, None) or str(request.url_for("home"))
+        return RedirectResponse(next_url, status_code=302)
     return templates.TemplateResponse(request, "login.html", ctx.dict(error="Tên đăng nhập hoặc mật khẩu không đúng!"))
 
 

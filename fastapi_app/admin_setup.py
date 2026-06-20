@@ -9,7 +9,7 @@ load_dotenv()
 
 from .database import SessionLocal, engine
 from .models import User, Product, Category, Order, OrderItem, Invoice, SupportTicket
-from .auth import check_django_password
+from .admin_utils import authenticate_admin
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,13 +24,9 @@ class StoreAdminAuth(AuthenticationBackend):
         password = form.get("password")
         db = SessionLocal()
         try:
-            user = (
-                db.query(User)
-                .filter(User.username == username, User.is_staff == True, User.is_active == True)
-                .first()
-            )
-            if user and check_django_password(password, user.password):
-                request.session.update({"admin_user": user.username, "admin_id": user.id})
+            user = authenticate_admin(db, username, password)
+            if user:
+                request.session.update({"user_id": user.id, "admin_user": user.username, "admin_id": user.id})
                 return True
         finally:
             db.close()

@@ -278,17 +278,18 @@
     // Chatbot
     const chatLauncher = document.getElementById('chat-launcher');
     const chatWidget = document.getElementById('chat-widget');
-    const closeChatBtn = document.getElementById('close-chat');
-    const resetChatBtn = document.getElementById('reset-chat');
-    const chatbox = document.getElementById('chatbox');
-    const messageInput = document.getElementById('message-input');
-    const sendButton = document.getElementById('send-button');
+    const closeChatBtn = chatWidget.querySelector('#close-chat');
+    const resetChatBtn = chatWidget.querySelector('#reset-chat');
+    const chatbox = chatWidget.querySelector('#chatbox');
+    const messageInput = chatWidget.querySelector('#message-input');
+    const sendButton = chatWidget.querySelector('#send-button');
 
     chatLauncher.addEventListener('click', () => chatWidget.classList.toggle('show'));
     closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
     resetChatBtn.addEventListener('click', resetChatHistory);
     sendButton.addEventListener('click', sendMessage);
     messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
+    loadChatHistory();
 
     function scrollToBottom() { chatbox.scrollTop = chatbox.scrollHeight; }
 
@@ -385,6 +386,20 @@
         chatbox.appendChild(el);
         if (type === 'bot') await renderProductCards(el, productIds);
         scrollToBottom();
+    }
+
+    async function loadChatHistory() {
+        try {
+            const res = await fetch('/api/chatbot/history/');
+            const data = await res.json();
+            if (!data.messages || !data.messages.length) return;
+            chatbox.innerHTML = '';
+            for (const item of data.messages) {
+                await appendMessage(item.content, item.role === 'user' ? 'user' : 'bot');
+            }
+        } catch (error) {
+            console.error('Chat history load error:', error);
+        }
     }
 
     function showTypingIndicator() {

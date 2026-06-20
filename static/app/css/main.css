@@ -887,7 +887,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .cart-row {
   display: flex;
-  align-items: flex-stretch;
+  align-items: stretch;
   padding-bottom: 10px;
   margin-bottom: 10px;
   border-bottom: 1px solid #ececec;
@@ -920,6 +920,267 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--primary) !important;
 }
 
+.payment-method-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.payment-method-option img,
+.payment-method-fallback {
+  width: 34px;
+  height: 24px;
+  border-radius: 5px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.payment-method-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef4f8;
+  color: var(--primary-dark);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+/* =============================================
+   Payment sandbox
+   ============================================= */
+.payment-sandbox-page {
+  padding: 34px 16px 56px;
+}
+
+.payment-sandbox-card {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.payment-sandbox-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px;
+  color: #fff;
+}
+
+.payment-sandbox-head.momo {
+  background: linear-gradient(135deg, #8b0057, #d72f8a);
+}
+
+.payment-sandbox-head.paypal {
+  background: linear-gradient(135deg, #003087, #0070ba);
+}
+
+.payment-sandbox-kicker {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  opacity: 0.82;
+}
+
+.payment-sandbox-head h1 {
+  margin: 6px 0;
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.payment-sandbox-head p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.payment-sandbox-badge {
+  align-self: flex-start;
+  min-width: 112px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.14);
+  text-align: center;
+}
+
+.payment-sandbox-badge span {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+}
+
+.payment-sandbox-badge strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.payment-sandbox-body {
+  padding: 26px;
+}
+
+.payment-sandbox-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.payment-sandbox-meta span,
+.paypal-test-account span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.payment-sandbox-meta strong {
+  display: block;
+  color: var(--text);
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+.payment-sandbox-total {
+  color: var(--accent) !important;
+  font-size: 1.35rem !important;
+  line-height: 1.15;
+  text-align: right;
+}
+
+.payment-provider-box {
+  display: grid;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 18px;
+  border-radius: 12px;
+}
+
+.payment-provider-box.momo {
+  grid-template-columns: 144px minmax(0, 1fr);
+  background: #fff5fb;
+  border: 1px solid #f4c6df;
+}
+
+.payment-provider-box.paypal {
+  grid-template-columns: minmax(0, 1fr) 220px;
+  background: #f2f8ff;
+  border: 1px solid #c8ddff;
+}
+
+.payment-provider-box h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.payment-provider-box p {
+  margin: 0 0 10px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.payment-provider-box code {
+  display: inline-block;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.sandbox-qr {
+  height: 132px;
+  border: 1px solid #efc2db;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b0057;
+  font-weight: 900;
+  text-align: center;
+}
+
+.sandbox-qr.image {
+  padding: 8px;
+}
+
+.sandbox-qr img,
+.paypal-test-account img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.paypal-test-account {
+  padding: 14px;
+  border: 1px solid #b9d5ff;
+  border-radius: 10px;
+  background: #fff;
+  word-break: break-word;
+}
+
+.paypal-test-account img {
+  width: 100%;
+  height: 74px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+.paypal-test-account strong {
+  display: block;
+  color: #003087;
+}
+
+.paypal-test-account small {
+  color: #64748b;
+}
+
+.payment-sandbox-submit,
+.payment-sandbox-back {
+  width: 100%;
+  display: block;
+  border: 0;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.payment-sandbox-submit {
+  color: #fff;
+}
+
+.payment-sandbox-submit.momo {
+  background: #a50064;
+}
+
+.payment-sandbox-submit.paypal {
+  background: #0070ba;
+}
+
+.payment-sandbox-back {
+  margin-top: 10px;
+  background: #eef3f8;
+  color: var(--text);
+}
+
 /* =============================================
    Responsive
    ============================================= */
@@ -932,6 +1193,33 @@ h1, h2, h3, h4, h5, h6 {
   .cat-nav-item { padding: 10px 12px; font-size: 0.8rem; }
   .detail-price { font-size: 1.5rem; }
   .detail-add-btn { padding: 12px 20px; }
+  .cart-row {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .cart-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 150px;
+  }
+  .cart-line-total {
+    width: 100%;
+  }
+  .payment-sandbox-head,
+  .payment-sandbox-meta,
+  .payment-provider-box.momo,
+  .payment-provider-box.paypal {
+    grid-template-columns: 1fr;
+  }
+  .payment-sandbox-head {
+    display: grid;
+  }
+  .payment-sandbox-total {
+    text-align: left;
+  }
+  .payment-sandbox-badge {
+    width: 100%;
+  }
   .spec-label { width: 100px; min-width: 100px; }
   .product-card__actions { flex-direction: column; }
   .btn-view { text-align: center; }

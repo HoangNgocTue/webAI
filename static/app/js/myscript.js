@@ -85,7 +85,7 @@ $('.plus-wishlist').click(function(){
         },
         success:function(data){
             //alert(data.message)
-            window.location.href = `http://localhost:8000/product-detail/${id}`
+            window.location.href = `/detail/?id=${id}`
         }
     })
 })
@@ -100,7 +100,7 @@ $('.minus-wishlist').click(function(){
             prod_id:id
         },
         success:function(data){
-            window.location.href = `http://localhost:8000/product-detail/${id}`
+            window.location.href = `/detail/?id=${id}`
         }
     })
 })

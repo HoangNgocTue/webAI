@@ -11,21 +11,22 @@ from ..models import SupportTicket
 from ..chatbot_service import get_system_prompt, get_history, save_history
 from ..chatbot_features import (
     build_add_to_cart_reply,
+    build_auth_reply,
     build_context_detail_reply,
     build_fallback_reply,
     build_more_products_reply,
     build_remove_from_cart_reply,
     build_similar_products_reply,
-    build_system_prompt as build_shopping_system_prompt,
     clear_cart_confirmation,
     clear_history,
-    ensure_product_markers,
     find_products_with_context,
     format_cart_reply,
     get_product_previews,
+    get_chat_history_payload,
     get_special_reply,
     handle_pending_cart_confirmation,
     is_add_to_cart_request,
+    is_auth_request,
     is_cart_view_request,
     is_context_detail_request,
     is_more_products_request,
@@ -33,6 +34,7 @@ from ..chatbot_features import (
     is_similar_products_request,
     record_chat_history,
     remember_products,
+    sanitize_bot_reply,
 )
 from ..templates_config import templates
 
@@ -105,16 +107,6 @@ def _create_ai_reply(provider: str, system_prompt: str, history: list, user_mess
     return response.content[0].text
 
 
-def _try_ai_reply(provider: str, system_prompt: str, history: list, user_message: str) -> str | None:
-    if not _selected_api_key(provider):
-        return None
-    try:
-        return _create_ai_reply(provider, system_prompt, history, user_message)
-    except Exception as e:
-        print(f"{provider.title()} Shopping Reply Error: {type(e).__name__} - {e}")
-        return None
-
-
 @router.get("/chatbot/", name="chatbot_view")
 async def chatbot_view(request: Request, ctx: BaseContext = Depends(BaseContext)):
     return templates.TemplateResponse(request, "chatbot.html", ctx.dict())
@@ -129,6 +121,11 @@ async def chatbot_product_previews(ids: str = "", db: Session = Depends(get_db))
 async def chatbot_clear_history(request: Request):
     clear_history(request)
     return JSONResponse({"ok": True})
+
+
+@router.get("/api/chatbot/history/", name="chatbot_history")
+async def chatbot_history(request: Request, db: Session = Depends(get_db)):
+    return JSONResponse({"messages": get_chat_history_payload(db, request)})
 
 
 @router.post("/api/chatbot/", name="chatbot_api")
@@ -162,8 +159,8 @@ async def chatbot_api(request: Request, db: Session = Depends(get_db)):
             )
             if ticket.staff_note:
                 reply += f"- Ghi chú nhân viên: {ticket.staff_note}"
-            return JSONResponse({"reply": reply})
-        return JSONResponse({"reply": f"❌ Không tìm thấy ticket **{ticket_id}**. Bạn kiểm tra lại mã ticket nhé."})
+            return JSONResponse({"reply": sanitize_bot_reply(reply)})
+        return JSONResponse({"reply": sanitize_bot_reply(f"❌ Không tìm thấy ticket **{ticket_id}**. Bạn kiểm tra lại mã ticket nhé.")})
 
     # --- Flow 2: Email for pending ticket ---
     email_match = re.search(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", user_message)
@@ -176,7 +173,7 @@ async def chatbot_api(request: Request, db: Session = Depends(get_db)):
             db.commit()
             request.session.pop("pending_email_ticket", None)
             return JSONResponse({
-                "reply": (
+                "reply": sanitize_bot_reply(
                     f"✅ Đã lưu email **{email}** cho ticket **{pending_ticket_id}**.\n"
                     f"Mình sẽ gửi thông báo ngay khi ticket được xử lý nhé! 😊"
                 )
@@ -187,46 +184,54 @@ async def chatbot_api(request: Request, db: Session = Depends(get_db)):
     # --- Flow 3: Product and cart features ported from the previous chatbot ---
     shopping_reply = handle_pending_cart_confirmation(db, request, user_message)
     if shopping_reply:
+        shopping_reply = sanitize_bot_reply(shopping_reply)
         record_chat_history(db, request, user_message, shopping_reply)
         return JSONResponse({"reply": shopping_reply})
 
     special_reply = get_special_reply(user_message)
     if special_reply:
+        special_reply = sanitize_bot_reply(special_reply)
         record_chat_history(db, request, user_message, special_reply)
         return JSONResponse({"reply": special_reply})
 
+    if is_auth_request(user_message):
+        clear_cart_confirmation(request)
+        reply = sanitize_bot_reply(build_auth_reply())
+        record_chat_history(db, request, user_message, reply)
+        return JSONResponse({"reply": reply})
+
     if is_cart_view_request(user_message):
         clear_cart_confirmation(request)
-        reply = format_cart_reply(db, request)
+        reply = sanitize_bot_reply(format_cart_reply(db, request))
         record_chat_history(db, request, user_message, reply)
         return JSONResponse({"reply": reply})
 
     if is_remove_from_cart_request(user_message):
-        reply = build_remove_from_cart_reply(db, request, user_message)
+        reply = sanitize_bot_reply(build_remove_from_cart_reply(db, request, user_message))
         record_chat_history(db, request, user_message, reply)
         return JSONResponse({"reply": reply})
 
     if is_more_products_request(user_message):
         clear_cart_confirmation(request)
-        reply = build_more_products_reply(db, request, user_message)
+        reply = sanitize_bot_reply(build_more_products_reply(db, request, user_message))
         record_chat_history(db, request, user_message, reply)
         return JSONResponse({"reply": reply})
 
     if is_similar_products_request(user_message):
         clear_cart_confirmation(request)
-        reply = build_similar_products_reply(db, request)
+        reply = sanitize_bot_reply(build_similar_products_reply(db, request))
         record_chat_history(db, request, user_message, reply)
         return JSONResponse({"reply": reply})
 
     if is_context_detail_request(user_message):
         clear_cart_confirmation(request)
-        reply = build_context_detail_reply(db, request, user_message)
+        reply = sanitize_bot_reply(build_context_detail_reply(db, request, user_message))
         record_chat_history(db, request, user_message, reply)
         return JSONResponse({"reply": reply})
 
     if is_add_to_cart_request(user_message):
         clear_cart_confirmation(request)
-        reply = build_add_to_cart_reply(db, request, user_message)
+        reply = sanitize_bot_reply(build_add_to_cart_reply(db, request, user_message))
         record_chat_history(db, request, user_message, reply)
         return JSONResponse({"reply": reply})
 
@@ -234,14 +239,7 @@ async def chatbot_api(request: Request, db: Session = Depends(get_db)):
     if products or filters:
         clear_cart_confirmation(request)
         remember_products(request, products, message=user_message, filters=filters)
-        fallback_reply = build_fallback_reply(products, filters)
-        reply = _try_ai_reply(
-            provider,
-            build_shopping_system_prompt(db, request, products, filters),
-            [],
-            user_message,
-        ) or fallback_reply
-        reply = ensure_product_markers(reply, products)
+        reply = sanitize_bot_reply(build_fallback_reply(products, filters), products)
         record_chat_history(db, request, user_message, reply)
         return JSONResponse({"reply": reply})
 
@@ -275,6 +273,7 @@ async def chatbot_api(request: Request, db: Session = Depends(get_db)):
                     f"hãy nhập địa chỉ email của bạn nhé."
                 )
 
+        reply = sanitize_bot_reply(reply)
         save_history(request, user_message, reply)
         return JSONResponse({"reply": reply, "ticket": ticket_info})
 

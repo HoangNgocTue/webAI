@@ -2,14 +2,14 @@
 
 {% block content_checkout %}
 <div style="padding-top:10px;">
-  <h2 style="font-weight:800;color:var(--text);margin-bottom:4px;">Xác nhận đặt hàng</h2>
-  <p style="color:var(--text-muted);margin-bottom:28px;">Kiểm tra lại đơn hàng trước khi thanh toán</p>
+  <h2 style="font-weight:800;color:var(--text);margin-bottom:4px;">Xac nhan dat hang</h2>
+  <p style="color:var(--text-muted);margin-bottom:28px;">Kiem tra lai don hang truoc khi thanh toan</p>
 
   {% if order and items %}
   <div class="row g-4">
     <div class="col-lg-8">
       <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
-        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">📦 Sản phẩm đặt mua</h6>
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">San pham dat mua</h6>
         {% for item in items %}
         {% if item.product %}
         <div class="d-flex align-items-center gap-3 mb-3 pb-3" style="border-bottom:1px solid var(--border);">
@@ -18,9 +18,9 @@
                onerror="this.style.display='none'">
           <div style="flex:1;">
             <div style="font-weight:600;color:var(--text);">{{ item.product.name }}</div>
-            <div style="color:var(--text-muted);font-size:0.85rem;">{{ item.product.price|vnd }}đ × {{ item.quantity }}</div>
+            <div style="color:var(--text-muted);font-size:0.85rem;">{{ item.product.price|vnd }}đ x {{ item.quantity }}</div>
           </div>
-          <div style="font-weight:700;color:var(--accent);">{{ item.get_total|vnd }}đ</div>
+          <div style="font-weight:700;color:var(--accent);word-break:break-word;text-align:right;">{{ item.get_total|vnd }}đ</div>
         </div>
         {% endif %}
         {% endfor %}
@@ -29,31 +29,49 @@
 
     <div class="col-lg-4">
       <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
-        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">💳 Thanh toán</h6>
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">Thanh toan</h6>
         <div class="d-flex justify-content-between mb-2">
-          <span style="color:var(--text-muted);">Tạm tính</span>
+          <span style="color:var(--text-muted);">Tam tinh</span>
           <span style="font-weight:600;">{{ order.get_cart_total|vnd }}đ</span>
         </div>
         <div class="d-flex justify-content-between mb-2">
-          <span style="color:var(--text-muted);">Phí giao hàng</span>
-          <span style="font-weight:600;color:#22c55e;">Miễn phí</span>
+          <span style="color:var(--text-muted);">Phi giao hang</span>
+          <span style="font-weight:600;color:#22c55e;">Mien phi</span>
         </div>
         <hr style="border-color:var(--border);">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <span style="font-weight:700;color:var(--text);font-size:1.05rem;">Tổng cộng</span>
-          <span style="font-weight:800;color:var(--accent);font-size:1.3rem;">{{ order.get_cart_total|vnd }}đ</span>
+        <div class="d-flex justify-content-between align-items-start mb-4 gap-3">
+          <span style="font-weight:700;color:var(--text);font-size:1.05rem;">Tong cong</span>
+          <span style="font-weight:800;color:var(--accent);font-size:1.3rem;text-align:right;word-break:break-word;line-height:1.2;">{{ order.get_cart_total|vnd }}đ</span>
         </div>
 
         <form method="POST" action="{{ request.url_for('checkout_post') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div style="margin-bottom:18px;">
+            <div style="font-weight:700;color:var(--text);margin-bottom:10px;">Chon phuong thuc</div>
+            {% for value, label in payment_methods.items() %}
+            <label class="payment-method-option">
+              <input type="radio" name="payment_method" value="{{ value }}" {% if loop.first %}checked{% endif %}>
+              {% if value == "momo" %}
+              <img src="/static/app/images/payment/icon_momo.png" alt="MoMo">
+              {% elif value == "paypal" %}
+              <img src="/static/app/images/payment/icon_paypal.png" alt="PayPal">
+              {% elif value == "bank_transfer" %}
+              <span class="payment-method-fallback">Bank</span>
+              {% else %}
+              <span class="payment-method-fallback">COD</span>
+              {% endif %}
+              <span style="font-weight:600;color:var(--text);">{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
           <button type="submit" class="btn w-100"
                   style="background:var(--accent);color:white;border-radius:10px;font-weight:700;padding:14px;font-size:1rem;">
-            ✅ Xác nhận đặt hàng
+            Xac nhan va thanh toan
           </button>
         </form>
         <a href="{{ request.url_for('cart') }}" class="btn w-100 mt-2"
            style="background:#f0f4f8;color:var(--text);border-radius:10px;font-weight:500;">
-          ← Quay lại giỏ hàng
+          Quay lai gio hang
         </a>
       </div>
     </div>
@@ -61,9 +79,9 @@
 
   {% else %}
   <div class="text-center py-5 bg-white rounded-4 shadow-sm">
-    <div style="font-size:3rem;margin-bottom:12px;">🛒</div>
-    <h5>Giỏ hàng trống</h5>
-    <a href="{{ request.url_for('home') }}" class="btn mt-3" style="background:var(--primary);color:white;border-radius:10px;">Mua sắm ngay</a>
+    <div style="font-size:3rem;margin-bottom:12px;">Cart</div>
+    <h5>Gio hang trong</h5>
+    <a href="{{ request.url_for('home') }}" class="btn mt-3" style="background:var(--primary);color:white;border-radius:10px;">Mua sam ngay</a>
   </div>
   {% endif %}
 </div>

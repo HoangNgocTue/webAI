@@ -3,6 +3,7 @@ from fastapi import Request, Depends
 from sqlalchemy.orm import Session
 from .database import get_db
 from .models import User, Category, Order
+from .cart_utils import get_cart
 
 
 def get_session_user(request: Request, db: Session) -> User | None:
@@ -30,16 +31,9 @@ class BaseContext:
         # Top-level categories for nav bar
         self.categories = db.query(Category).filter(Category.is_sub == False).all()
 
-        # Cart item count
-        self.cart_items = 0
-        if self.current_user:
-            order = (
-                db.query(Order)
-                .filter(Order.customer_id == self.current_user.id, Order.complete == False)
-                .first()
-            )
-            if order:
-                self.cart_items = order.get_cart_items
+        # Cart item count, including guest session carts.
+        order, _ = get_cart(db, request, self.current_user)
+        self.cart_items = order.get_cart_items if order else 0
 
     def dict(self, **extra):
         return {

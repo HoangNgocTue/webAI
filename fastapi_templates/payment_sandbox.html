@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% set is_momo = provider == "momo" %}
+
+{% block main_content %}
+<div class="payment-sandbox-page">
+  <div class="payment-sandbox-card">
+    <div class="payment-sandbox-head {{ 'momo' if is_momo else 'paypal' }}">
+      <div>
+        <div class="payment-sandbox-kicker">SANDBOX GATEWAY</div>
+        <h1>{{ method_label }}</h1>
+        <p>
+          {% if is_momo %}
+          MoMo test payment with return and IPN simulation.
+          {% else %}
+          PayPal sandbox checkout approval simulation.
+          {% endif %}
+        </p>
+      </div>
+      <div class="payment-sandbox-badge">
+        <span>Mode</span>
+        <strong>TEST</strong>
+      </div>
+    </div>
+
+    <div class="payment-sandbox-body">
+      <div class="payment-sandbox-meta">
+        <div>
+          <span>Ma giao dich</span>
+          <strong>{{ transaction_id }}</strong>
+        </div>
+        <div>
+          <span>So tien</span>
+          <strong class="payment-sandbox-total">{{ order.get_cart_total|vnd }}đ</strong>
+        </div>
+      </div>
+
+      {% if is_momo %}
+      <div class="payment-provider-box momo">
+        <div class="sandbox-qr image">
+          <img src="/static/app/images/payment/thanh-toan-momo.jpg" alt="MoMo sandbox">
+        </div>
+        <div>
+          <h2>MoMo Sandbox</h2>
+          <p>
+            Nut xac nhan se gia lap ket qua MoMo thanh cong, hoan tat don hang
+            va chuyen ve trang bien lai. Khi co credential that, he thong se tu
+            redirect sang cong test cua MoMo.
+          </p>
+          <code>POST /payment/momo/ipn/</code>
+        </div>
+      </div>
+      {% else %}
+      <div class="payment-provider-box paypal">
+        <div>
+          <h2>PayPal Sandbox</h2>
+          <p>
+            Nut approve se gia lap buyer sandbox chap nhan thanh toan, hoan tat
+            don hang va chuyen ve trang bien lai. Khi co credential that, he
+            thong se redirect sang PayPal sandbox checkout.
+          </p>
+        </div>
+        <div class="paypal-test-account">
+          <img src="/static/app/images/payment/cong-thanh-toan-paypal.jpg" alt="PayPal sandbox">
+          <span>Buyer sandbox</span>
+          <strong>sb-buyer@example.com</strong>
+          <small>Password: sandbox123</small>
+        </div>
+      </div>
+      {% endif %}
+
+      <form method="post" action="{{ request.url_for('payment_sandbox_confirm', provider=provider, order_id=order.id) }}">
+        <input type="hidden" name="method" value="{{ provider }}">
+        <button class="payment-sandbox-submit {{ 'momo' if is_momo else 'paypal' }}">
+          {% if is_momo %}Xac nhan MoMo sandbox{% else %}Approve PayPal sandbox{% endif %}
+        </button>
+      </form>
+
+      <a href="{{ request.url_for('checkout') }}" class="payment-sandbox-back">Quay lai checkout</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

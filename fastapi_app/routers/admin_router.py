@@ -9,7 +9,7 @@ from sqlalchemy import func, extract
 from ..dependencies import BaseContext
 from ..database import SessionLocal
 from ..models import User, Order, OrderItem, Product, SupportTicket
-from ..auth import check_django_password
+from ..admin_utils import authenticate_admin
 from ..email_service import _send
 from ..templates_config import templates
 
@@ -58,18 +58,11 @@ async def admin_login_post(request: Request, ctx: BaseContext = Depends(BaseCont
 
     db = SessionLocal()
     try:
-        user = (
-            db.query(User)
-            .filter(User.username == username, User.is_active == True)
-            .first()
-        )
-        is_admin = user and (user.is_staff or user.is_superuser)
-        if is_admin and check_django_password(password, user.password):
+        user = authenticate_admin(db, username, password)
+        if user:
             request.session["user_id"] = user.id
             request.session["admin_user"] = user.username
             request.session["admin_id"] = user.id
-            user.last_login = datetime.utcnow()
-            db.commit()
             return RedirectResponse("/quan-tri/", status_code=302)
     finally:
         db.close()

@@ -3,10 +3,11 @@ import re
 import unicodedata
 from decimal import Decimal
 
-from sqlalchemy import and_, or_
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from .models import ChatHistory, Category, Order, OrderItem, Product, User
+from .cart_utils import get_cart, update_cart_item
 
 
 PRICE_UNIT = Decimal("1000000")
@@ -15,6 +16,15 @@ DETAIL_MARKDOWN_LINK_RE = re.compile(
     r"\s*-?\s*\[(?:Xem chi tiết|Xem sản phẩm)\]\(/detail/\?id=\d+\)",
     re.IGNORECASE,
 )
+INTERNAL_ABSOLUTE_URL_RE = re.compile(
+    r"https?://(?:www\.)?(?:danangstore\.vn|localhost(?::\d+)?|127\.0\.0\.1(?::\d+)?)(/[\w\-./?=&%#]*)",
+    re.IGNORECASE,
+)
+CATEGORY_URL_RE = re.compile(r"/category/?\?category=([^)\s]+)")
+BROKEN_LOGIN_RE = re.compile(r"\]\((?:https?://[^)\s]+)?/login\)", re.IGNORECASE)
+BARE_LOGIN_RE = re.compile(r"(?<![\w/])/(login|register|cart|checkout|profile|order-history)(?!/)(?=[\s).,]|$)", re.IGNORECASE)
+PRODUCT_LINK_LINE_RE = re.compile(r"(?:\s*\|\s*)?Link:\s*/detail/\?id=(\d+)", re.IGNORECASE)
+CATEGORY_SLUG_RE = re.compile(r"category/(laptop|dien-thoai|linh-kien-pc|phu-kien)(?![/?\w-])", re.IGNORECASE)
 CATEGORY_SLUGS = {"laptop", "dien-thoai", "linh-kien-pc", "phu-kien"}
 
 
@@ -94,6 +104,49 @@ def get_special_reply(message: str) -> str | None:
     return None
 
 
+def is_auth_request(message: str) -> bool:
+    normalized = clean_intent_text(message)
+    return any(
+        keyword in normalized
+        for keyword in [
+            "dang nhap",
+            "login",
+            "tai khoan",
+            "account",
+            "lich su mua hang",
+            "quan ly don hang",
+            "don hang cua toi",
+        ]
+    )
+
+
+def build_auth_reply() -> str:
+    return (
+        "Bạn có thể đăng nhập tài khoản tại đây:\n\n"
+        "[Đăng nhập](/login/)\n\n"
+        "Sau khi đăng nhập, bạn có thể xem lịch sử mua hàng, quản lý đơn hàng và truy cập thông tin cá nhân."
+    )
+
+
+def normalize_internal_links(reply: str) -> str:
+    reply = INTERNAL_ABSOLUTE_URL_RE.sub(lambda match: match.group(1), reply or "")
+    reply = BROKEN_LOGIN_RE.sub("](/login/)", reply)
+    reply = CATEGORY_URL_RE.sub(lambda match: f"/category/?category={match.group(1)}", reply)
+    reply = CATEGORY_SLUG_RE.sub(lambda match: f"category/?category={match.group(1)}", reply)
+    reply = BARE_LOGIN_RE.sub(lambda match: f"/{match.group(1).lower()}/", reply)
+    return reply
+
+
+def sanitize_bot_reply(reply: str, products: list[Product] | None = None) -> str:
+    reply = normalize_internal_links(reply)
+    reply = PRODUCT_LINK_LINE_RE.sub("", reply)
+    reply = re.sub(r"\[ID:(\d+)\]\s*", "", reply, flags=re.IGNORECASE)
+    reply = re.sub(r"\n{3,}", "\n\n", reply).strip()
+    if products:
+        reply = ensure_product_markers(reply, products)
+    return reply
+
+
 def parse_price_filters(text: str) -> dict:
     filters = {}
     normalized = normalize_text(text)
@@ -127,7 +180,7 @@ def parse_product_filters(message: str) -> dict:
     filters = parse_price_filters(message)
     categories = {
         "laptop": ["laptop", "may tinh", "may tinh xach tay", "notebook", "macbook"],
-        "dien-thoai": ["dien thoai", "dt", "smartphone", "phone", "iphone", "samsung", "xiaomi"],
+        "dien-thoai": ["dien thoai", "ddienhj thoai", "thoai", "dt", "smartphone", "phone", "iphone", "samsung", "samung", "xiaomi"],
         "linh-kien-pc": ["linh kien", "cpu", "gpu", "card", "card do hoa", "ram", "pc"],
         "phu-kien": ["phu kien", "chuot", "ban phim", "tai nghe"],
     }
@@ -168,6 +221,23 @@ def parse_product_filters(message: str) -> dict:
         filters.setdefault("gpu", "rtx")
     if any(keyword in normalized for keyword in ["hoc tap", "sinh vien", "van phong", "lam viec"]):
         filters.setdefault("category_slug", "laptop")
+    brand_aliases = {
+        "samsung": ["samsung", "samung", "samsumg", "sámung"],
+        "xiaomi": ["xiaomi", "xiomi"],
+        "iphone": ["iphone", "ipone"],
+        "apple": ["apple"],
+        "macbook": ["macbook"],
+        "asus": ["asus"],
+        "hp": ["hp"],
+        "dell": ["dell"],
+        "lenovo": ["lenovo"],
+        "acer": ["acer"],
+        "msi": ["msi"],
+    }
+    for brand, aliases in brand_aliases.items():
+        if any(alias in normalized for alias in aliases):
+            filters["name"] = brand
+            break
     ram_match = re.search(r"\b(8|12|16|24|32|64)\s*gb\s*(?:ram)?\b", normalized)
     if ram_match:
         filters["ram"] = f"{ram_match.group(1)}GB"
@@ -202,6 +272,8 @@ def filter_products(db: Session, filters: dict):
         query = query.filter(Product.ram.ilike(f"%{filters['ram']}%"))
     if filters.get("storage"):
         query = query.filter(Product.storage.ilike(f"%{filters['storage']}%"))
+    if filters.get("name"):
+        query = query.filter(Product.name.ilike(f"%{filters['name']}%"))
     return query.distinct()
 
 
@@ -398,50 +470,19 @@ def remember_added_product(request, product: Product):
     request.session["chatbot_last_product_ids"] = [product.id]
 
 
-def get_active_cart_order(db: Session, user: User | None) -> Order | None:
-    if not user:
-        return None
-    return db.query(Order).filter(Order.customer_id == user.id, Order.complete == False).first()
+def get_cart_items_for_request(db: Session, request) -> tuple[Order | None, list]:
+    return get_cart(db, request, get_current_user(request, db))
 
 
-def get_cart_items_for_request(db: Session, user: User | None) -> tuple[Order | None, list[OrderItem]]:
-    order = get_active_cart_order(db, user)
-    if not order:
-        return None, []
-    items = (
-        db.query(OrderItem)
-        .options(joinedload(OrderItem.product))
-        .filter(OrderItem.order_id == order.id, OrderItem.quantity > 0, OrderItem.product_id.isnot(None))
-        .all()
-    )
-    return order, items
-
-
-def add_product_to_cart(db: Session, request, user: User | None, product: Product) -> Order | None:
-    if not user:
-        return None
-    order = get_active_cart_order(db, user)
-    if not order:
-        order = Order(customer_id=user.id, complete=False)
-        db.add(order)
-        db.flush()
-    item = db.query(OrderItem).filter(OrderItem.order_id == order.id, OrderItem.product_id == product.id).first()
-    if not item:
-        item = OrderItem(order_id=order.id, product_id=product.id, quantity=0)
-        db.add(item)
-        db.flush()
-    item.quantity += 1
-    db.commit()
-    db.refresh(order)
+def add_product_to_cart(db: Session, request, product: Product):
+    update_cart_item(db, request, product, "add", get_current_user(request, db))
+    order, _ = get_cart_items_for_request(db, request)
     remember_added_product(request, product)
     return order
 
 
 def format_cart_reply(db: Session, request) -> str:
-    user = get_current_user(request, db)
-    if not user:
-        return "Bạn cần đăng nhập để xem giỏ hàng.\n\n[Đăng nhập](/login/)"
-    order, items = get_cart_items_for_request(db, user)
+    order, items = get_cart_items_for_request(db, request)
     if not order or not items:
         return "Giỏ hàng của bạn đang trống.\n\n[Xem giỏ hàng](/cart/)"
     rows = [f"{index}. **{item.product.name}** x {item.quantity} - {fmt_price(item.get_total)}đ" for index, item in enumerate(items, 1)]
@@ -467,8 +508,7 @@ def score_product_name(query: str, product: Product) -> int:
 
 
 def find_cart_items_by_name(db: Session, request, message: str) -> list[OrderItem]:
-    user = get_current_user(request, db)
-    _, items = get_cart_items_for_request(db, user)
+    _, items = get_cart_items_for_request(db, request)
     keyword = strip_cart_words(message)
     scored = []
     for item in items:
@@ -487,6 +527,7 @@ def set_cart_confirmation(request, action: str, items: list[OrderItem], index: i
     request.session["chatbot_pending_cart_action"] = {
         "action": action,
         "item_ids": [item.id for item in items],
+        "product_ids": [item.product.id for item in items if item.product],
         "index": index,
     }
 
@@ -494,9 +535,16 @@ def set_cart_confirmation(request, action: str, items: list[OrderItem], index: i
 def get_pending_cart_confirmation(db: Session, request):
     pending = request.session.get("chatbot_pending_cart_action") or {}
     item_ids = pending.get("item_ids") or []
-    items = db.query(OrderItem).options(joinedload(OrderItem.product)).filter(OrderItem.id.in_(item_ids), OrderItem.quantity > 0).all() if item_ids else []
-    item_map = {item.id: item for item in items}
-    ordered = [item_map[item_id] for item_id in item_ids if item_id in item_map]
+    user = get_current_user(request, db)
+    if user:
+        items = db.query(OrderItem).options(joinedload(OrderItem.product)).filter(OrderItem.id.in_(item_ids), OrderItem.quantity > 0).all() if item_ids else []
+        item_map = {item.id: item for item in items}
+        ordered = [item_map[item_id] for item_id in item_ids if item_id in item_map]
+    else:
+        product_ids = pending.get("product_ids") or item_ids
+        _, guest_items = get_cart_items_for_request(db, request)
+        item_map = {item.product.id: item for item in guest_items if item.product}
+        ordered = [item_map[product_id] for product_id in product_ids if product_id in item_map]
     if not pending or not ordered:
         clear_cart_confirmation(request)
         return None, [], 0
@@ -518,10 +566,9 @@ def build_confirm_remove_reply(request, items: list[OrderItem], index: int = 0) 
 
 def remove_cart_item(db: Session, request, item: OrderItem) -> str:
     product = item.product
-    db.delete(item)
-    db.commit()
+    update_cart_item(db, request, product, "remove", get_current_user(request, db))
     clear_cart_confirmation(request)
-    order = get_active_cart_order(db, get_current_user(request, db))
+    order, _ = get_cart_items_for_request(db, request)
     total_items = order.get_cart_items if order else 0
     total_amount = fmt_price(order.get_cart_total) if order else "0"
     return f"Đã xóa **{product.name}** khỏi giỏ hàng.\n\n- Số lượng còn lại: {total_items}\n- Tổng tạm tính: {total_amount}đ\n\n[Xem giỏ hàng](/cart/)"
@@ -546,11 +593,7 @@ def handle_pending_cart_confirmation(db: Session, request, message: str) -> str 
 
 
 def build_remove_from_cart_reply(db: Session, request, message: str) -> str:
-    user = get_current_user(request, db)
-    if not user:
-        clear_cart_confirmation(request)
-        return "Bạn cần đăng nhập để xóa sản phẩm trong giỏ hàng.\n\n[Đăng nhập](/login/)"
-    _, items = get_cart_items_for_request(db, user)
+    _, items = get_cart_items_for_request(db, request)
     if not items:
         clear_cart_confirmation(request)
         return "Giỏ hàng của bạn đang trống, nên chưa có sản phẩm để xóa."
@@ -568,10 +611,7 @@ def build_add_to_cart_reply(db: Session, request, message: str) -> str:
     product = select_product_for_cart(db, request, message)
     if not product:
         return "Mình chưa tìm thấy sản phẩm bạn muốn thêm vào giỏ. Bạn có thể nói rõ hơn, ví dụ: **thêm sản phẩm số 1 vào giỏ hàng**."
-    user = get_current_user(request, db)
-    if not user:
-        return f"Mình tìm thấy **{product.name}**, nhưng bạn cần đăng nhập trước khi thêm vào giỏ.\n\n[Xem sản phẩm](/detail/?id={product.id}) | [Đăng nhập](/login/)"
-    order = add_product_to_cart(db, request, user, product)
+    order = add_product_to_cart(db, request, product)
     return (
         f"Đã thêm **{product.name}** vào giỏ hàng.\n\n"
         f"- Số lượng trong giỏ: {order.get_cart_items}\n"
@@ -709,6 +749,30 @@ def record_chat_history(db: Session, request, message: str, reply: str):
     if user:
         db.add(ChatHistory(user_id=user.id, message=message, reply=reply))
         db.commit()
+
+
+def get_chat_history_payload(db: Session, request, limit: int = 30) -> list[dict]:
+    user = get_current_user(request, db)
+    if user:
+        rows = (
+            db.query(ChatHistory)
+            .filter(ChatHistory.user_id == user.id)
+            .order_by(ChatHistory.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        messages = []
+        for item in reversed(rows):
+            messages.append({"role": "user", "content": item.message})
+            messages.append({"role": "bot", "content": item.reply})
+        return messages
+
+    session_history = request.session.get("chatbot_recent_history", [])[-limit:]
+    messages = []
+    for item in session_history:
+        messages.append({"role": "user", "content": item.get("message", "")})
+        messages.append({"role": "bot", "content": item.get("reply", "")})
+    return messages
 
 
 def build_fallback_reply(products: list[Product], filters: dict) -> str:
