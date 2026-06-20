@@ -55,20 +55,60 @@ async function sendMessage() {
             body: JSON.stringify({ message: msg })
         });
         const data = await res.json();
-        appendMessage(data.reply, 'bot');
+        await appendMessage(data.reply, 'bot');
     } catch (e) {
-        appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
+        await appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
     } finally {
         hideTypingIndicator();
     }
 }
 
-function appendMessage(message, type) {
+function extractProductIds(message) {
+    const ids = [];
+    const markerRegex = /<!--\s*PRODUCT:(\d+)\s*-->/g;
+    let match;
+    while ((match = markerRegex.exec(message)) !== null) {
+        if (!ids.includes(match[1])) ids.push(match[1]);
+    }
+    return ids;
+}
+
+async function renderProductCards(container, ids) {
+    if (!ids.length) return;
+    try {
+        const res = await fetch(`/api/chatbot/products/?ids=${encodeURIComponent(ids.join(','))}`);
+        const data = await res.json();
+        if (!data.products || !data.products.length) return;
+        const cards = document.createElement('div');
+        cards.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px;';
+        data.products.forEach((product) => {
+            const card = document.createElement('a');
+            card.href = product.url;
+            card.style.cssText = 'display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;text-decoration:none;color:#111827;';
+            card.innerHTML = `
+                <img src="${product.image || '/static/images/cart.png'}" alt="" style="width:58px;height:58px;object-fit:cover;border-radius:6px;background:#f3f4f6;">
+                <span style="min-width:0;display:block;">
+                    <strong style="display:block;font-size:0.9rem;line-height:1.2;">${product.name}</strong>
+                    <span style="display:block;font-size:0.84rem;color:var(--primary);font-weight:700;margin-top:4px;">${product.price}</span>
+                </span>
+            `;
+            cards.appendChild(card);
+        });
+        container.appendChild(cards);
+    } catch (error) {
+        console.error('Product preview error:', error);
+    }
+}
+
+async function appendMessage(message, type) {
     const el = document.createElement('div');
     el.classList.add('message', type);
-    if (type === 'bot') el.innerHTML = marked.parse(message);
+    const productIds = type === 'bot' ? extractProductIds(message) : [];
+    const cleanMessage = type === 'bot' ? message.replace(/<!--\s*PRODUCT:\d+\s*-->/g, '') : message;
+    if (type === 'bot') el.innerHTML = marked.parse(cleanMessage);
     else el.textContent = message;
     chatbox.appendChild(el);
+    if (type === 'bot') await renderProductCards(el, productIds);
     scrollToBottom();
 }
 
