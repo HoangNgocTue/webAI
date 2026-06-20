@@ -78,7 +78,11 @@ class OrderAdmin(ModelView, model=Order):
     name = "Đơn hàng"
     name_plural = "Đơn hàng"
     icon = "fa-solid fa-shopping-cart"
-    column_list = [Order.id, Order.customer_id, Order.status, Order.complete, Order.date_order, Order.approved_date]
+    column_list = [
+        Order.id, Order.customer_id, Order.status, Order.complete,
+        Order.payment_method, Order.payment_status,
+        Order.date_order, Order.approved_date,
+    ]
     column_sortable_list = [Order.id, Order.status, Order.date_order]
     form_excluded_columns = [Order.order_items, Order.shipping_address, Order.invoice]
 

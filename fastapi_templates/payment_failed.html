@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div style="padding-top:60px;padding-bottom:60px;">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 text-center">
+      <div class="bg-white rounded-4 shadow-sm p-5" style="border:1px solid var(--border);">
+        <div style="font-size:3rem;margin-bottom:12px;">❌</div>
+        <h4 style="font-weight:800;color:var(--text);margin-bottom:10px;">Thanh toán không thành công</h4>
+        <p style="color:var(--text-muted);margin-bottom:24px;">
+          {{ reason or "Giao dịch đã bị hủy hoặc xảy ra lỗi trong quá trình thanh toán." }}
+        </p>
+        <div class="d-flex gap-2 justify-content-center">
+          <a href="{{ request.url_for('checkout') }}" class="btn"
+             style="background:var(--accent);color:white;border-radius:10px;font-weight:700;padding:10px 24px;">
+            Thử lại
+          </a>
+          <a href="{{ request.url_for('cart') }}" class="btn"
+             style="background:#f0f4f8;color:var(--text);border-radius:10px;font-weight:500;padding:10px 24px;">
+            Quay lại giỏ hàng
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
