@@ -1,18 +1,32 @@
 from datetime import datetime
-from fastapi import APIRouter, Request, Depends, HTTPException, Form
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from .. import payment_service
+from ..database import SessionLocal
 from ..dependencies import BaseContext
-from ..models import Order, OrderItem, Invoice, Product
+from ..models import Invoice, Order
 from ..templates_config import templates
 
 router = APIRouter(tags=["orders"])
 
 
+def _public_base_url(request: Request) -> str:
+    if payment_service.PUBLIC_BASE_URL:
+        return payment_service.PUBLIC_BASE_URL.rstrip("/")
+    return str(request.base_url).rstrip("/")
+
+
+def _payment_failed(request: Request, ctx: BaseContext, reason: str):
+    return templates.TemplateResponse(
+        request,
+        "payment_failed.html",
+        ctx.dict(reason=reason),
+    )
+
+
 def _finalize_order(db, order: Order) -> Invoice:
-    """Đánh dấu đơn hàng hoàn tất và tạo hóa đơn. Dùng chung cho COD và sau khi
-    cổng thanh toán xác nhận thành công."""
     now = datetime.utcnow()
     order.date_order = now
     order.complete = True
@@ -34,6 +48,7 @@ def _finalize_order(db, order: Order) -> Invoice:
 async def checkout_get(request: Request, ctx: BaseContext = Depends(BaseContext)):
     if not ctx.current_user:
         return RedirectResponse("/login/", status_code=302)
+
     order = (
         ctx.db.query(Order)
         .filter(Order.customer_id == ctx.current_user.id, Order.complete == False)
@@ -41,8 +56,12 @@ async def checkout_get(request: Request, ctx: BaseContext = Depends(BaseContext)
     )
     if not order or order.get_cart_items == 0:
         return RedirectResponse("/cart/", status_code=302)
-    items = order.order_items
-    return templates.TemplateResponse(request, "checkout.html", ctx.dict(order=order, items=items))
+
+    return templates.TemplateResponse(
+        request,
+        "checkout.html",
+        ctx.dict(order=order, items=order.order_items),
+    )
 
 
 @router.post("/checkout/", name="checkout_post")
@@ -53,6 +72,7 @@ async def checkout_post(
 ):
     if not ctx.current_user:
         return RedirectResponse("/login/", status_code=302)
+
     order = (
         ctx.db.query(Order)
         .filter(Order.customer_id == ctx.current_user.id, Order.complete == False)
@@ -61,65 +81,74 @@ async def checkout_post(
     if not order:
         return RedirectResponse("/cart/", status_code=302)
 
+    amount = int(order.get_cart_total)
+    if amount <= 0:
+        return _payment_failed(request, ctx, "Don hang khong co tong tien hop le.")
+
     order.payment_method = payment_method
     ctx.db.commit()
 
-    amount = int(order.get_cart_total)
-
-    # --- Thanh toán khi nhận hàng (COD): giữ flow cũ, hoàn tất đơn ngay ---
     if payment_method == "cod":
-        order.payment_status = "unpaid"  # sẽ thu tiền khi giao hàng
+        order.payment_status = "unpaid"
         ctx.db.commit()
         invoice = _finalize_order(ctx.db, order)
         return RedirectResponse(f"/invoice/{invoice.id}/", status_code=302)
 
-    # --- VNPay: redirect sang trang thanh toán sandbox ---
     if payment_method == "vnpay":
         ip_addr = request.client.host if request.client else "127.0.0.1"
-        pay_url, txn_ref = payment_service.create_vnpay_payment_url(
-            order_id=order.id, amount=amount, ip_addr=ip_addr,
-            order_desc=f"Thanh toan don hang #{order.id} - Da Nang Store",
-        )
+        try:
+            pay_url, txn_ref = payment_service.create_vnpay_payment_url(
+                order_id=order.id,
+                amount=amount,
+                ip_addr=ip_addr,
+                order_desc=f"Thanh toan don hang {order.id} - Da Nang Store",
+                return_url=payment_service.absolute_url(
+                    "/payment/vnpay/return/", _public_base_url(request)
+                ),
+            )
+        except Exception as exc:
+            return _payment_failed(request, ctx, f"Khong the tao thanh toan VNPay: {exc}")
+
         order.payment_ref = txn_ref
         ctx.db.commit()
         return RedirectResponse(pay_url, status_code=302)
 
-    # --- MoMo: gọi API tạo URL thanh toán sandbox ---
     if payment_method == "momo":
+        momo_amount = payment_service.momo_sandbox_amount(amount)
         try:
             pay_url, momo_order_id = await payment_service.create_momo_payment_url(
-                order_id=order.id, amount=amount,
-                order_desc=f"Thanh toan don hang #{order.id} - Da Nang Store",
+                order_id=order.id,
+                amount=momo_amount,
+                order_desc=f"Thanh toan don hang {order.id} - Da Nang Store",
+                redirect_url=payment_service.absolute_url(
+                    "/payment/momo/return/", _public_base_url(request)
+                ),
+                ipn_url=payment_service.absolute_url(
+                    "/payment/momo/ipn/", _public_base_url(request)
+                ),
             )
         except Exception as exc:
-            raise HTTPException(status_code=502, detail=f"Không thể kết nối MoMo: {exc}")
+            return _payment_failed(request, ctx, f"Khong the tao thanh toan MoMo: {exc}")
+
         order.payment_ref = momo_order_id
         ctx.db.commit()
         return RedirectResponse(pay_url, status_code=302)
 
-    raise HTTPException(status_code=400, detail="Phương thức thanh toán không hợp lệ")
+    raise HTTPException(status_code=400, detail="Phuong thuc thanh toan khong hop le")
 
 
 @router.get("/payment/vnpay/return/", name="vnpay_return")
 async def vnpay_return(request: Request, ctx: BaseContext = Depends(BaseContext)):
-    """VNPay redirect người dùng về đây sau khi thanh toán (Return URL)."""
     params = dict(request.query_params)
 
     if not payment_service.verify_vnpay_response(params):
-        return templates.TemplateResponse(
-            request, "payment_failed.html",
-            ctx.dict(reason="Chữ ký xác thực không hợp lệ.")
-        )
+        return _payment_failed(request, ctx, "Chu ky xac thuc khong hop le.")
 
     txn_ref = params.get("vnp_TxnRef", "")
     order_id = txn_ref.split("-")[0] if "-" in txn_ref else None
     order = ctx.db.query(Order).filter(Order.id == order_id).first() if order_id else None
-
     if not order:
-        return templates.TemplateResponse(
-            request, "payment_failed.html",
-            ctx.dict(reason="Không tìm thấy đơn hàng tương ứng.")
-        )
+        return _payment_failed(request, ctx, "Khong tim thay don hang tuong ung.")
 
     if payment_service.is_vnpay_success(params) and not order.complete:
         order.payment_status = "paid"
@@ -134,21 +163,11 @@ async def vnpay_return(request: Request, ctx: BaseContext = Depends(BaseContext)
 
     order.payment_status = "failed"
     ctx.db.commit()
-    return templates.TemplateResponse(
-        request, "payment_failed.html",
-        ctx.dict(reason="Giao dịch VNPay không thành công hoặc đã bị hủy.")
-    )
+    return _payment_failed(request, ctx, "Giao dich VNPay khong thanh cong hoac da bi huy.")
 
 
 @router.get("/payment/vnpay/ipn/", name="vnpay_ipn")
 async def vnpay_ipn(request: Request):
-    """
-    IPN (Instant Payment Notification) — VNPay gọi server-to-server để xác nhận
-    kết quả giao dịch độc lập với Return URL (người dùng có thể đóng trình
-    duyệt trước khi redirect về). Phải trả JSON đúng format VNPay yêu cầu.
-    """
-    from ..database import SessionLocal
-
     params = dict(request.query_params)
     db = SessionLocal()
     try:
@@ -158,10 +177,8 @@ async def vnpay_ipn(request: Request):
         txn_ref = params.get("vnp_TxnRef", "")
         order_id = txn_ref.split("-")[0] if "-" in txn_ref else None
         order = db.query(Order).filter(Order.id == order_id).first() if order_id else None
-
         if not order:
             return {"RspCode": "01", "Message": "Order not found"}
-
         if order.complete:
             return {"RspCode": "02", "Message": "Order already confirmed"}
 
@@ -182,22 +199,13 @@ async def vnpay_ipn(request: Request):
 
 @router.get("/payment/momo/return/", name="momo_return")
 async def momo_return(request: Request, ctx: BaseContext = Depends(BaseContext)):
-    """MoMo redirect người dùng về đây sau khi thanh toán (redirectUrl)."""
     params = dict(request.query_params)
-
     momo_order_id = params.get("orderId", "")
     order_id = momo_order_id.split("-")[0] if "-" in momo_order_id else None
     order = ctx.db.query(Order).filter(Order.id == order_id).first() if order_id else None
-
     if not order:
-        return templates.TemplateResponse(
-            request, "payment_failed.html",
-            ctx.dict(reason="Không tìm thấy đơn hàng tương ứng.")
-        )
+        return _payment_failed(request, ctx, "Khong tim thay don hang tuong ung.")
 
-    # Kết quả ở Return URL chỉ mang tính hiển thị tạm; trạng thái chính thức
-    # nên dựa vào IPN (server-to-server). Ở đây vẫn kiểm tra nhanh resultCode
-    # để chuyển hướng người dùng cho mượt.
     if str(params.get("resultCode")) == "0":
         if not order.complete:
             order.payment_status = "paid"
@@ -206,24 +214,16 @@ async def momo_return(request: Request, ctx: BaseContext = Depends(BaseContext))
             ctx.db.commit()
             invoice = _finalize_order(ctx.db, order)
             return RedirectResponse(f"/invoice/{invoice.id}/", status_code=302)
-        return RedirectResponse(f"/invoice/{order.invoice.id}/", status_code=302)
+        if order.invoice:
+            return RedirectResponse(f"/invoice/{order.invoice.id}/", status_code=302)
 
     order.payment_status = "failed"
     ctx.db.commit()
-    return templates.TemplateResponse(
-        request, "payment_failed.html",
-        ctx.dict(reason="Giao dịch MoMo không thành công hoặc đã bị hủy.")
-    )
+    return _payment_failed(request, ctx, "Giao dich MoMo khong thanh cong hoac da bi huy.")
 
 
 @router.post("/payment/momo/ipn/", name="momo_ipn")
 async def momo_ipn(request: Request):
-    """
-    IPN MoMo gọi server-to-server (JSON body) để xác nhận kết quả giao dịch.
-    Phải trả HTTP 204/200 nhanh, không nên xử lý nặng ở đây.
-    """
-    from ..database import SessionLocal
-
     data = await request.json()
     db = SessionLocal()
     try:
@@ -233,7 +233,6 @@ async def momo_ipn(request: Request):
         momo_order_id = data.get("orderId", "")
         order_id = momo_order_id.split("-")[0] if "-" in momo_order_id else None
         order = db.query(Order).filter(Order.id == order_id).first() if order_id else None
-
         if not order or order.complete:
             return {"message": "Ignored"}
 
@@ -255,7 +254,7 @@ async def momo_ipn(request: Request):
 async def invoice_detail(id: int, request: Request, ctx: BaseContext = Depends(BaseContext)):
     invoice = ctx.db.query(Invoice).filter(Invoice.id == id).first()
     if not invoice:
-        raise HTTPException(status_code=404, detail="Hóa đơn không tồn tại")
+        raise HTTPException(status_code=404, detail="Hoa don khong ton tai")
     return templates.TemplateResponse(request, "invoice_detail.html", ctx.dict(invoice=invoice))
 
 

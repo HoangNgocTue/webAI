@@ -1,0 +1,113 @@
+erDiagram
+    AUTH_USER {
+        int id PK
+        string username UK
+        string password
+        string email
+        bool is_staff
+        bool is_superuser
+        bool is_active
+        datetime date_joined
+    }
+
+    APP_CATEGORY {
+        int id PK
+        int sub_category_id FK
+        bool is_sub
+        string name
+        string slug UK
+    }
+
+    APP_PRODUCT {
+        int id PK
+        string name
+        decimal price
+        bool digital
+        string image
+        text detail
+        string color
+        string cpu
+        string gpu
+        string ram
+        string storage
+        int stock
+    }
+
+    APP_PRODUCT_CATEGORY {
+        int product_id FK
+        int category_id FK
+    }
+
+    APP_ORDER {
+        int id PK
+        int customer_id FK
+        datetime date_order
+        bool complete
+        string transaction_id
+        datetime approved_date
+        string status
+        string payment_method
+        string payment_status
+        string payment_ref
+    }
+
+    APP_ORDERITEM {
+        int id PK
+        int product_id FK
+        int order_id FK
+        int quantity
+        datetime date_added
+    }
+
+    APP_SHIPPINGADDRESS {
+        int id PK
+        int customer_id FK
+        int order_id FK
+        string address
+        string city
+        string state
+        string mobile
+        datetime date_added
+    }
+
+    APP_INVOICE {
+        int id PK
+        int order_id FK_UK
+        int customer_id FK
+        decimal total_amount
+        datetime invoice_date
+    }
+
+    CHATBOT_CHATHISTORY {
+        int id PK
+        int user_id FK
+        text message
+        text reply
+        datetime created_at
+    }
+
+    CHATBOT_SUPPORTTICKET {
+        int id PK
+        string ticket_id UK
+        string category
+        text description
+        string status
+        string customer_email
+        text staff_note
+        datetime created_at
+        datetime updated_at
+    }
+
+    AUTH_USER ||--o{ APP_ORDER : customer_id
+    AUTH_USER ||--o{ APP_SHIPPINGADDRESS : customer_id
+    AUTH_USER ||--o{ APP_INVOICE : customer_id
+    AUTH_USER ||--o{ CHATBOT_CHATHISTORY : user_id
+
+    APP_ORDER ||--o{ APP_ORDERITEM : order_id
+    APP_ORDER ||--o| APP_SHIPPINGADDRESS : order_id
+    APP_ORDER ||--o| APP_INVOICE : order_id
+
+    APP_PRODUCT ||--o{ APP_ORDERITEM : product_id
+    APP_PRODUCT ||--o{ APP_PRODUCT_CATEGORY : product_id
+    APP_CATEGORY ||--o{ APP_PRODUCT_CATEGORY : category_id
+    APP_CATEGORY ||--o{ APP_CATEGORY : sub_category_id
