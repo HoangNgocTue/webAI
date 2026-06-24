@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, Numeric, Text, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from decimal import Decimal
+from pathlib import Path
 import uuid
 from .database import Base
 
@@ -80,9 +81,16 @@ class Product(Base):
 
     @property
     def ImageURL(self):
-        if self.image:
+        fallback = "/static/app/images/product-placeholder.svg"
+        if not self.image:
+            return fallback
+        if str(self.image).startswith(("http://", "https://", "/static/", "/images/")):
+            return str(self.image)
+
+        image_path = Path(__file__).resolve().parent.parent / "static" / "images" / str(self.image)
+        if image_path.exists():
             return f"/images/{self.image}"
-        return ""
+        return fallback
 
 
 class Order(Base):
