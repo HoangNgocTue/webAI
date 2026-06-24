@@ -34,6 +34,8 @@ async def update_item(request: Request, db: Session = Depends(get_db)):
     product_id = data.get("productId")
     action = data.get("action")
     user_id = request.session["user_id"]
+    if action not in {"add", "remove"}:
+        raise HTTPException(status_code=400, detail="Invalid cart action")
 
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
@@ -63,8 +65,10 @@ async def update_item(request: Request, db: Session = Depends(get_db)):
     if order_item.quantity <= 0:
         db.delete(order_item)
         qty = 0
+        item_total = 0
     else:
         qty = order_item.quantity
+        item_total = float(order_item.get_total)
 
     db.commit()
     db.refresh(order)
@@ -72,6 +76,8 @@ async def update_item(request: Request, db: Session = Depends(get_db)):
     return JSONResponse(
         {
             "quantity": qty,
+            "item_total": item_total,
+            "removed": qty == 0,
             "cart_total": float(order.get_cart_total),
             "cart_items": order.get_cart_items,
         }

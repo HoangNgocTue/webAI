@@ -9,18 +9,18 @@
   <div class="row g-4">
     <div class="col-lg-8">
       <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
-        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">📦 Sản phẩm đặt mua</h6>
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">Sản phẩm đặt mua</h6>
         {% for item in items %}
         {% if item.product %}
-        <div class="d-flex align-items-center gap-3 mb-3 pb-3" style="border-bottom:1px solid var(--border);">
+        <div class="checkout-line">
           <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}"
                style="width:60px;height:60px;object-fit:contain;border-radius:8px;border:1px solid var(--border);padding:4px;"
                onerror="this.style.display='none'">
-          <div style="flex:1;">
+          <div class="checkout-line__info">
             <div style="font-weight:600;color:var(--text);">{{ item.product.name }}</div>
             <div style="color:var(--text-muted);font-size:0.85rem;">{{ item.product.price|vnd }}đ × {{ item.quantity }}</div>
           </div>
-          <div style="font-weight:700;color:var(--accent);">{{ item.get_total|vnd }}đ</div>
+          <div class="checkout-line__total money-text">{{ item.get_total|vnd }}đ</div>
         </div>
         {% endif %}
         {% endfor %}
@@ -29,26 +29,42 @@
 
     <div class="col-lg-4">
       <div class="bg-white rounded-4 shadow-sm p-4" style="border:1px solid var(--border);">
-        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">💳 Thanh toán</h6>
-        <div class="d-flex justify-content-between mb-2">
+        <h6 style="font-weight:700;color:var(--text);margin-bottom:16px;">Thanh toán</h6>
+        <div class="cart-summary-total mb-2">
           <span style="color:var(--text-muted);">Tạm tính</span>
-          <span style="font-weight:600;">{{ order.get_cart_total|vnd }}đ</span>
+          <span class="money-text" style="font-weight:600;">{{ order.get_cart_total|vnd }}đ</span>
         </div>
-        <div class="d-flex justify-content-between mb-2">
+        <div class="cart-summary-total mb-2">
           <span style="color:var(--text-muted);">Phí giao hàng</span>
           <span style="font-weight:600;color:#22c55e;">Miễn phí</span>
         </div>
         <hr style="border-color:var(--border);">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="cart-summary-total mb-4">
           <span style="font-weight:700;color:var(--text);font-size:1.05rem;">Tổng cộng</span>
-          <span style="font-weight:800;color:var(--accent);font-size:1.3rem;">{{ order.get_cart_total|vnd }}đ</span>
+          <span class="money-text" style="font-weight:800;color:var(--accent);font-size:1.3rem;">{{ order.get_cart_total|vnd }}đ</span>
         </div>
 
         <form method="POST" action="{{ request.url_for('checkout_post') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+          <div style="margin-bottom:18px;">
+            <label class="d-flex align-items-center gap-2 mb-2" style="cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <input type="radio" name="payment_method" value="cod" checked>
+              <span style="font-weight:600;">Thanh toán khi nhận hàng (COD)</span>
+            </label>
+            <label class="d-flex align-items-center gap-2 mb-2" style="cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <input type="radio" name="payment_method" value="vnpay">
+              <span style="font-weight:600;">Thanh toán qua VNPay</span>
+            </label>
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;border:1px solid var(--border);border-radius:10px;padding:12px;">
+              <input type="radio" name="payment_method" value="momo">
+              <span style="font-weight:600;">Thanh toán qua MoMo</span>
+            </label>
+          </div>
+
           <button type="submit" class="btn w-100"
                   style="background:var(--accent);color:white;border-radius:10px;font-weight:700;padding:14px;font-size:1rem;">
-            ✅ Xác nhận đặt hàng
+            Xác nhận đặt hàng
           </button>
         </form>
         <a href="{{ request.url_for('cart') }}" class="btn w-100 mt-2"

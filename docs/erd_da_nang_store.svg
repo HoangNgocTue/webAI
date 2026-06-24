@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="860" viewBox="0 0 1320 860">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 700 26px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #64748b; }
+      .table { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 10; }
+      .head { fill: #0e7490; }
+      .headText { font: 700 14px Arial, sans-serif; fill: #ffffff; }
+      .field { font: 12px Consolas, monospace; fill: #0f172a; }
+      .pk { fill: #f97316; font-weight: 700; }
+      .fk { fill: #2563eb; }
+      .note { font: 12px Arial, sans-serif; fill: #475569; }
+      .rel { stroke: #475569; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+      .self { stroke: #64748b; stroke-width: 1.4; fill: none; stroke-dasharray: 5 5; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1320" height="860"/>
+  <text x="40" y="42" class="title">Sơ đồ cấu trúc bảng dữ liệu quan hệ - Đà Nẵng Store</text>
+  <text x="40" y="66" class="subtitle">ERD mô tả khóa chính, khóa ngoại và liên kết giữa các bảng chính trong hệ thống.</text>
+
+  <!-- Relationships behind tables -->
+  <path class="rel" d="M270 165 C320 165, 320 165, 380 165"/>
+  <path class="rel" d="M610 165 C660 165, 660 165, 720 165"/>
+  <path class="rel" d="M950 195 C990 195, 990 195, 1040 195"/>
+  <path class="rel" d="M610 455 C665 455, 665 220, 720 220"/>
+  <path class="rel" d="M950 465 C990 465, 990 275, 1040 275"/>
+  <path class="rel" d="M950 465 C990 465, 990 465, 1040 465"/>
+  <path class="rel" d="M270 220 C320 220, 320 455, 380 455"/>
+  <path class="rel" d="M610 455 C650 455, 650 255, 610 255"/>
+  <path class="rel" d="M270 500 C325 500, 325 250, 380 250"/>
+  <path class="rel" d="M270 550 C325 550, 325 500, 380 500"/>
+  <path class="rel" d="M270 725 C320 725, 320 250, 380 250"/>
+  <path class="self" d="M1230 455 C1290 455, 1290 610, 1130 610 C1015 610, 1015 520, 1040 520"/>
+
+  <!-- AUTH_USER -->
+  <g transform="translate(40,95)">
+    <rect class="table" width="230" height="190"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">auth_user</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field">username (unique)</text>
+    <text x="14" y="98" class="field">password</text>
+    <text x="14" y="118" class="field">email</text>
+    <text x="14" y="138" class="field">is_staff, is_superuser</text>
+    <text x="14" y="158" class="field">is_active</text>
+    <text x="14" y="178" class="field">date_joined</text>
+  </g>
+
+  <!-- APP_ORDER -->
+  <g transform="translate(380,95)">
+    <rect class="table" width="230" height="230"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">app_order</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field fk">FK customer_id -> auth_user</text>
+    <text x="14" y="98" class="field">date_order</text>
+    <text x="14" y="118" class="field">complete</text>
+    <text x="14" y="138" class="field">transaction_id</text>
+    <text x="14" y="158" class="field">approved_date</text>
+    <text x="14" y="178" class="field">status</text>
+    <text x="14" y="198" class="field">payment_method/status</text>
+    <text x="14" y="218" class="field">payment_ref</text>
+  </g>
+
+  <!-- APP_ORDERITEM -->
+  <g transform="translate(720,95)">
+    <rect class="table" width="230" height="170"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">app_orderitem</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field fk">FK order_id -> app_order</text>
+    <text x="14" y="98" class="field fk">FK product_id -> app_product</text>
+    <text x="14" y="118" class="field">quantity</text>
+    <text x="14" y="138" class="field">date_added</text>
+  </g>
+
+  <!-- APP_PRODUCT -->
+  <g transform="translate(1040,95)">
+    <rect class="table" width="230" height="250"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">app_product</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field">name</text>
+    <text x="14" y="98" class="field">price</text>
+    <text x="14" y="118" class="field">digital</text>
+    <text x="14" y="138" class="field">image</text>
+    <text x="14" y="158" class="field">detail</text>
+    <text x="14" y="178" class="field">color</text>
+    <text x="14" y="198" class="field">cpu, gpu, ram</text>
+    <text x="14" y="218" class="field">storage</text>
+    <text x="14" y="238" class="field">stock</text>
+  </g>
+
+  <!-- APP_INVOICE -->
+  <g transform="translate(40,405)">
+    <rect class="table" width="230" height="160"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">app_invoice</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field fk">FK order_id -> app_order</text>
+    <text x="14" y="98" class="field fk">FK customer_id -> auth_user</text>
+    <text x="14" y="118" class="field">total_amount</text>
+    <text x="14" y="138" class="field">invoice_date</text>
+  </g>
+
+  <!-- APP_SHIPPINGADDRESS -->
+  <g transform="translate(380,405)">
+    <rect class="table" width="230" height="180"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">app_shippingaddress</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field fk">FK customer_id -> auth_user</text>
+    <text x="14" y="98" class="field fk">FK order_id -> app_order</text>
+    <text x="14" y="118" class="field">address, city, state</text>
+    <text x="14" y="138" class="field">mobile</text>
+    <text x="14" y="158" class="field">date_added</text>
+  </g>
+
+  <!-- PRODUCT_CATEGORY -->
+  <g transform="translate(720,405)">
+    <rect class="table" width="230" height="120"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">app_product_category</text>
+    <text x="14" y="58" class="field fk">FK product_id -> app_product</text>
+    <text x="14" y="78" class="field fk">FK category_id -> app_category</text>
+    <text x="14" y="98" class="field">junction table</text>
+  </g>
+
+  <!-- CATEGORY -->
+  <g transform="translate(1040,405)">
+    <rect class="table" width="230" height="150"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">app_category</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field fk">FK sub_category_id -> app_category</text>
+    <text x="14" y="98" class="field">is_sub</text>
+    <text x="14" y="118" class="field">name</text>
+    <text x="14" y="138" class="field">slug (unique)</text>
+  </g>
+
+  <!-- CHAT HISTORY -->
+  <g transform="translate(40,675)">
+    <rect class="table" width="230" height="130"/>
+    <rect class="head" width="230" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">chatbot_chathistory</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field fk">FK user_id -> auth_user</text>
+    <text x="14" y="98" class="field">message, reply</text>
+    <text x="14" y="118" class="field">created_at</text>
+  </g>
+
+  <!-- SUPPORT TICKET -->
+  <g transform="translate(380,675)">
+    <rect class="table" width="250" height="150"/>
+    <rect class="head" width="250" height="34" rx="10"/>
+    <text x="14" y="22" class="headText">chatbot_supportticket</text>
+    <text x="14" y="58" class="field pk">PK id</text>
+    <text x="14" y="78" class="field">ticket_id (unique)</text>
+    <text x="14" y="98" class="field">category, description</text>
+    <text x="14" y="118" class="field">status, customer_email</text>
+    <text x="14" y="138" class="field">staff_note, timestamps</text>
+  </g>
+
+  <text x="720" y="735" class="note">PK: khóa chính | FK: khóa ngoại | UK/unique: giá trị duy nhất</text>
+  <text x="720" y="758" class="note">Quan hệ nổi bật: User - Order - OrderItem - Product; Product - Category là quan hệ nhiều-nhiều qua bảng trung gian.</text>
+</svg>
