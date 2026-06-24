@@ -90,7 +90,7 @@
                 {% if item.product.ImageURL %}
                 <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}"
                      style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"
-                     onerror="this.style.display='none'">
+                     onerror="this.onerror=null;this.src='{{ request.url_for('static', path='app/images/product-placeholder.svg') }}'">
                 {% endif %}
                 <div style="flex:1;min-width:0;">
                   <div style="font-weight:500;color:var(--text);font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.product.name }}</div>

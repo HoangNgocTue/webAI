@@ -15,7 +15,7 @@
         <div class="checkout-line">
           <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}"
                style="width:60px;height:60px;object-fit:contain;border-radius:8px;border:1px solid var(--border);padding:4px;"
-               onerror="this.style.display='none'">
+               onerror="this.onerror=null;this.src='{{ request.url_for('static', path='app/images/product-placeholder.svg') }}'">
           <div class="checkout-line__info">
             <div style="font-weight:600;color:var(--text);">{{ item.product.name }}</div>
             <div style="color:var(--text-muted);font-size:0.85rem;">{{ item.product.price|vnd }}đ × {{ item.quantity }}</div>
