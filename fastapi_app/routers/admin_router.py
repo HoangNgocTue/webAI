@@ -1,7 +1,10 @@
 import os
 import json
+import re
+import shutil
 from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy import func, extract
@@ -15,6 +18,9 @@ from ..templates_config import templates
 
 router = APIRouter(prefix="/quan-tri", tags=["admin_panel"])
 legacy_router = APIRouter(tags=["admin_legacy_redirects"])
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+PRODUCT_IMAGE_DIR = BASE_DIR / "static" / "images"
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 CATEGORY_LABELS = {
     "order_payment": "Đặt hàng / Thanh toán",
@@ -153,6 +159,14 @@ def _render_form(request: Request, ctx: BaseContext, *, title: str, icon: str, a
         submit_label=submit_label,
         open_ticket_count=_open_count(ctx.db),
     ))
+
+
+def _safe_upload_name(filename: str) -> str:
+    stem = Path(filename).stem.lower()
+    suffix = Path(filename).suffix.lower()
+    stem = re.sub(r"[^a-z0-9_-]+", "-", stem).strip("-") or "product"
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+    return f"{stem}-{timestamp}{suffix}"
 
 
 @legacy_router.get("/admin/")
@@ -424,7 +438,8 @@ def _product_fields(ctx: BaseContext, product: Product | None = None):
         {"name": "name", "label": "Ten san pham", "type": "text", "value": product.name},
         {"name": "price", "label": "Gia", "type": "number", "step": "1000", "value": int(product.price or 0)},
         {"name": "stock", "label": "Ton kho", "type": "number", "value": product.stock or 0},
-        {"name": "image", "label": "Anh san pham", "type": "text", "value": product.image},
+        {"name": "image_file", "label": "Anh san pham", "type": "file", "value": product.image, "preview": product.ImageURL if product.image else ""},
+        {"name": "image", "label": "Ten file/URL anh hien tai", "type": "text", "value": product.image},
         {"name": "color", "label": "Mau sac", "type": "text", "value": product.color or "black"},
         {"name": "cpu", "label": "CPU", "type": "text", "value": product.cpu},
         {"name": "gpu", "label": "GPU", "type": "text", "value": product.gpu},
@@ -480,7 +495,21 @@ async def _save_product(request: Request, ctx: BaseContext, product: Product):
     product.name = form.get("name", "").strip()
     product.price = _form_decimal(form, "price")
     product.stock = _form_int(form, "stock") or 0
-    product.image = form.get("image", "").strip() or None
+    image_file = form.get("image_file")
+    image_text = form.get("image", "").strip() or None
+    if image_file and getattr(image_file, "filename", ""):
+        suffix = Path(image_file.filename).suffix.lower()
+        if suffix in ALLOWED_IMAGE_EXTENSIONS:
+            PRODUCT_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+            saved_name = _safe_upload_name(image_file.filename)
+            destination = PRODUCT_IMAGE_DIR / saved_name
+            with destination.open("wb") as buffer:
+                shutil.copyfileobj(image_file.file, buffer)
+            product.image = saved_name
+        else:
+            product.image = image_text
+    else:
+        product.image = image_text
     product.detail = form.get("detail", "").strip() or None
     product.color = form.get("color", "").strip() or "black"
     product.cpu = form.get("cpu", "").strip() or None
