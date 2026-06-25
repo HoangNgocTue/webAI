@@ -5,11 +5,18 @@
   <div class="row justify-content-center">
     <div class="col-lg-8">
       <div class="bg-white rounded-4 shadow-sm overflow-hidden" style="border:1px solid var(--border);height:600px;display:flex;flex-direction:column;">
-        <div class="px-4 py-3" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;">
+        <div class="px-4 py-3" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <div>
           <h5 style="margin:0;font-weight:700;">🤖 Dani — Trợ lý AI Đà Nẵng Store</h5>
           <div style="font-size:0.82rem;opacity:0.85;margin-top:4px;">Hỗ trợ tư vấn sản phẩm và giải quyết vấn đề 24/7</div>
+          </div>
+          <button type="button" id="reset-chat-page" data-reset-chat title="Reset lịch sử" aria-label="Reset lịch sử" style="border:1px solid rgba(255,255,255,0.6);background:transparent;color:white;border-radius:999px;padding:6px 10px;font-weight:700;font-size:0.82rem;">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="display:block;fill:currentColor;">
+              <path d="M17.7 6.3C16.2 4.9 14.2 4 12 4c-3.7 0-6.8 2.5-7.7 6H2l3.3 3.3L8.8 10H6.4C7.2 7.7 9.4 6 12 6c1.7 0 3.2.7 4.3 1.8L14 10h8V2l-4.3 4.3zM6.3 17.7C7.8 19.1 9.8 20 12 20c3.7 0 6.8-2.5 7.7-6H22l-3.3-3.3L15.2 14h2.4c-.8 2.3-3 4-5.6 4-1.7 0-3.2-.7-4.3-1.8L10 14H2v8l4.3-4.3z"></path>
+            </svg>
+          </button>
         </div>
-        <div id="chatbox" style="flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:15px;background:#f5f5f5;">
+        <div id="chatbox" data-chatbox style="flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:15px;background:#f5f5f5;">
           <div class="message bot">Xin chào! Tôi là Dani, trợ lý AI của Đà Nẵng Store. Tôi có thể giúp bạn tư vấn sản phẩm, giải đáp thắc mắc về đơn hàng hoặc hỗ trợ kỹ thuật. Bạn cần giúp gì hôm nay?</div>
         </div>
         <div style="display:flex;padding:15px;border-top:1px solid var(--border);">
@@ -32,6 +39,7 @@
 const chatbox = document.getElementById('chatbox');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
+const resetChatPageButton = document.getElementById('reset-chat-page');
 
 // Hide floating chatbot on this page
 document.getElementById('chat-launcher').style.display = 'none';
@@ -39,8 +47,40 @@ document.getElementById('chat-widget').style.display = 'none';
 
 sendButton.addEventListener('click', sendMessage);
 messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
+if (resetChatPageButton) resetChatPageButton.addEventListener('click', resetChat);
 
 function scrollToBottom() { chatbox.scrollTop = chatbox.scrollHeight; }
+
+function clearChatbox() { chatbox.innerHTML = ''; }
+
+async function loadChatHistory(forceEmpty = false) {
+    try {
+        const res = await fetch('/api/chatbot/history/');
+        const data = await res.json();
+        if (!data.history || !data.history.length) {
+            if (forceEmpty) {
+                clearChatbox();
+                appendMessage('Chưa có lịch sử trò chuyện nào để tải lại.', 'bot');
+            }
+            return;
+        }
+        clearChatbox();
+        data.history.forEach(item => appendMessage(item.message, item.type));
+    } catch (e) {}
+}
+
+loadChatHistory();
+
+async function resetChat() {
+    try {
+        const res = await fetch('/api/chatbot/reset/', { method: 'POST' });
+        const data = await res.json();
+        clearChatbox();
+        appendMessage(data.reply || 'Đã xóa lịch sử trò chuyện.', 'bot');
+    } catch (e) {
+        appendMessage('Không xóa được lịch sử chat. Bạn thử lại giúp mình nhé.', 'bot');
+    }
+}
 
 async function sendMessage() {
     const msg = messageInput.value.trim();

@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from .database import engine
-from .admin_setup import setup_admin
 from .routers import shop, auth_router, cart_router, orders_router, profile_router, pages_router, chatbot_router, support_router, admin_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,8 +31,6 @@ STATIC_DIR = BASE_DIR / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/images", StaticFiles(directory=str(STATIC_DIR / "images")), name="images")
 
-setup_admin(app, engine)
-
 app.include_router(shop.router)
 app.include_router(auth_router.router)
 app.include_router(cart_router.router)
@@ -43,4 +39,5 @@ app.include_router(profile_router.router)
 app.include_router(pages_router.router)
 app.include_router(chatbot_router.router)
 app.include_router(support_router.router)
+app.include_router(admin_router.legacy_router)
 app.include_router(admin_router.router)

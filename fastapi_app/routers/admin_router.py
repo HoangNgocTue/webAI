@@ -8,12 +8,13 @@ from sqlalchemy import func, extract
 
 from ..dependencies import BaseContext
 from ..database import SessionLocal
-from ..models import User, Order, OrderItem, Product, SupportTicket
+from ..models import Category, Invoice, User, Order, OrderItem, Product, SupportTicket
 from ..auth import check_django_password
 from ..email_service import _send
 from ..templates_config import templates
 
 router = APIRouter(prefix="/quan-tri", tags=["admin_panel"])
+legacy_router = APIRouter(tags=["admin_legacy_redirects"])
 
 CATEGORY_LABELS = {
     "order_payment": "Đặt hàng / Thanh toán",
@@ -34,7 +35,7 @@ STATUS_LABELS = {
 def _require_admin(request: Request, ctx: BaseContext):
     if not ctx.current_user or not (ctx.current_user.is_staff or ctx.current_user.is_superuser):
         return RedirectResponse("/quan-tri/login/", status_code=302)
-    # Keep admin_user in sync so SQLAdmin can also read the session
+    # Keep admin identity in session for the custom admin panel.
     if "admin_user" not in request.session:
         request.session["admin_user"] = ctx.current_user.username
         request.session["admin_id"] = ctx.current_user.id
@@ -83,7 +84,35 @@ def _open_count(db) -> int:
     return db.query(func.count(SupportTicket.id)).filter(SupportTicket.status == "open").scalar() or 0
 
 
+def _fmt_money(value) -> str:
+    try:
+        return f"{int(float(value or 0)):,.0f}".replace(",", ".") + "đ"
+    except Exception:
+        return str(value or "")
+
+
+def _fmt_date(value) -> str:
+    return value.strftime("%d/%m/%Y %H:%M") if value else "—"
+
+
 # ─── Dashboard ───────────────────────────────────────────────────────────────
+
+def _render_admin_list(request: Request, ctx: BaseContext, *, title: str, icon: str, active_page: str, columns: list[str], rows: list[list[str]]):
+    return templates.TemplateResponse(request, "admin_list.html", ctx.dict(
+        title=title,
+        icon=icon,
+        active_page=active_page,
+        columns=columns,
+        rows=rows,
+        open_ticket_count=_open_count(ctx.db),
+    ))
+
+
+@legacy_router.get("/admin/")
+@legacy_router.get("/admin/{path:path}")
+async def legacy_admin_redirect(path: str = ""):
+    return RedirectResponse("/quan-tri/", status_code=302)
+
 
 @router.get("/", name="admin_dashboard")
 async def dashboard(request: Request, ctx: BaseContext = Depends(BaseContext)):
@@ -172,6 +201,146 @@ async def dashboard(request: Request, ctx: BaseContext = Depends(BaseContext)):
 
 
 # ─── Ticket List ─────────────────────────────────────────────────────────────
+
+@router.get("/orders/", name="admin_orders")
+async def admin_orders(request: Request, ctx: BaseContext = Depends(BaseContext)):
+    redirect = _require_admin(request, ctx)
+    if redirect:
+        return redirect
+
+    rows = []
+    orders = (
+        ctx.db.query(Order, User.username)
+        .outerjoin(User, Order.customer_id == User.id)
+        .order_by(Order.date_order.desc())
+        .all()
+    )
+    for order, username in orders:
+        rows.append([
+            f"#{order.id}",
+            username or "Khách vãng lai",
+            order.status or "pending",
+            order.payment_status or "unpaid",
+            _fmt_money(order.get_cart_total),
+            _fmt_date(order.date_order),
+        ])
+    return _render_admin_list(
+        request, ctx,
+        title="Đơn hàng",
+        icon="🛒",
+        active_page="orders",
+        columns=["Mã đơn", "Khách hàng", "Trạng thái", "Thanh toán", "Tổng tiền", "Ngày đặt"],
+        rows=rows,
+    )
+
+
+@router.get("/products/", name="admin_products")
+async def admin_products(request: Request, ctx: BaseContext = Depends(BaseContext)):
+    redirect = _require_admin(request, ctx)
+    if redirect:
+        return redirect
+
+    rows = []
+    for product in ctx.db.query(Product).order_by(Product.id.desc()).all():
+        rows.append([
+            f"#{product.id}",
+            product.name or "",
+            _fmt_money(product.price),
+            str(product.stock or 0),
+            ", ".join(category.name for category in product.categories) or "Chưa phân loại",
+        ])
+    return _render_admin_list(
+        request, ctx,
+        title="Sản phẩm",
+        icon="📦",
+        active_page="products",
+        columns=["ID", "Tên sản phẩm", "Giá", "Tồn kho", "Danh mục"],
+        rows=rows,
+    )
+
+
+@router.get("/users/", name="admin_users")
+async def admin_users(request: Request, ctx: BaseContext = Depends(BaseContext)):
+    redirect = _require_admin(request, ctx)
+    if redirect:
+        return redirect
+
+    rows = []
+    for user in ctx.db.query(User).order_by(User.id.desc()).all():
+        role = "Superuser" if user.is_superuser else ("Staff" if user.is_staff else "Khách hàng")
+        rows.append([
+            f"#{user.id}",
+            user.username or "",
+            user.email or "",
+            role,
+            "Hoạt động" if user.is_active else "Đã khóa",
+            _fmt_date(user.date_joined),
+        ])
+    return _render_admin_list(
+        request, ctx,
+        title="Người dùng",
+        icon="👥",
+        active_page="users",
+        columns=["ID", "Username", "Email", "Vai trò", "Trạng thái", "Ngày tham gia"],
+        rows=rows,
+    )
+
+
+@router.get("/categories/", name="admin_categories")
+async def admin_categories(request: Request, ctx: BaseContext = Depends(BaseContext)):
+    redirect = _require_admin(request, ctx)
+    if redirect:
+        return redirect
+
+    rows = []
+    for category in ctx.db.query(Category).order_by(Category.id.desc()).all():
+        rows.append([
+            f"#{category.id}",
+            category.name or "",
+            category.slug or "",
+            "Danh mục con" if category.is_sub else "Danh mục chính",
+            str(len(category.products)),
+        ])
+    return _render_admin_list(
+        request, ctx,
+        title="Danh mục",
+        icon="🏷️",
+        active_page="categories",
+        columns=["ID", "Tên danh mục", "Slug", "Loại", "Số sản phẩm"],
+        rows=rows,
+    )
+
+
+@router.get("/invoices/", name="admin_invoices")
+async def admin_invoices(request: Request, ctx: BaseContext = Depends(BaseContext)):
+    redirect = _require_admin(request, ctx)
+    if redirect:
+        return redirect
+
+    rows = []
+    invoices = (
+        ctx.db.query(Invoice, User.username)
+        .outerjoin(User, Invoice.customer_id == User.id)
+        .order_by(Invoice.invoice_date.desc())
+        .all()
+    )
+    for invoice, username in invoices:
+        rows.append([
+            f"#{invoice.id}",
+            f"#{invoice.order_id}" if invoice.order_id else "—",
+            username or "Khách vãng lai",
+            _fmt_money(invoice.total_amount),
+            _fmt_date(invoice.invoice_date),
+        ])
+    return _render_admin_list(
+        request, ctx,
+        title="Hóa đơn",
+        icon="🧾",
+        active_page="invoices",
+        columns=["Mã hóa đơn", "Mã đơn", "Khách hàng", "Tổng tiền", "Ngày lập"],
+        rows=rows,
+    )
+
 
 @router.get("/tickets/", name="admin_tickets")
 async def ticket_list(request: Request, ctx: BaseContext = Depends(BaseContext)):

@@ -1,0 +1,37 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_icon %}{{ icon }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="adm-card">
+  <div class="adm-card-header">
+    <h2 class="adm-card-title">{{ icon }} {{ title }}</h2>
+    <a href="{{ request.url_for('admin_dashboard') }}" class="adm-btn adm-btn-ghost" style="padding:6px 12px;font-size:0.8rem;">← Dashboard</a>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          {% for column in columns %}
+          <th>{{ column }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for cell in row %}
+          <td>{{ cell }}</td>
+          {% endfor %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="{{ columns|length }}" style="text-align:center;padding:28px;color:var(--text-muted);">Chưa có dữ liệu.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

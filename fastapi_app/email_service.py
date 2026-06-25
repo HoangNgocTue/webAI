@@ -84,7 +84,7 @@ def send_ticket_confirm(to_email: str, customer_name: str, ticket_id: str,
 def send_ticket_admin_notify(admin_email: str, ticket_id: str, customer_name: str,
                              customer_email: str, customer_phone: str,
                              category_label: str, description: str,
-                             admin_url: str = "http://localhost:8000/admin/") -> bool:
+                             admin_url: str = "http://localhost:8000/quan-tri/tickets/") -> bool:
     """Gửi email thông báo ticket mới cho admin/kỹ thuật viên."""
     subject = f"[Ticket mới] {ticket_id} — {category_label}"
     phone_str = customer_phone or "<i style='color:#94a3b8'>Không cung cấp</i>"
@@ -101,7 +101,7 @@ def send_ticket_admin_notify(admin_email: str, ticket_id: str, customer_name: st
     <p style="margin:16px 0 6px;font-weight:600;font-size:0.9rem;color:#374151;">Nội dung:</p>
     <div class="desc-box">{description}</div>
     <div class="cta">
-      <a href="{admin_url}supportticket/">Xem & Xử lý tại Admin Panel</a>
+      <a href="{admin_url}">Xem & Xử lý tại Admin Panel</a>
     </div>
     """
     return _send(admin_email, subject, body_html)
