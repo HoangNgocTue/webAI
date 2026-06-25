@@ -1,0 +1,56 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_icon %}{{ icon }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="adm-card" style="max-width:980px;">
+  <div class="adm-card-header">
+    <h2 class="adm-card-title">{{ icon }} {{ title }}</h2>
+    <a href="{{ back_url }}" class="adm-btn adm-btn-ghost" style="padding:6px 12px;font-size:0.8rem;">Quay lai</a>
+  </div>
+  <form method="post" action="{{ action_url }}" class="adm-card-body">
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+      {% for field in fields %}
+      <div style="{% if field.type in ['textarea', 'multiselect'] %}grid-column:1 / -1;{% endif %}">
+        {% if field.type == 'checkbox' %}
+        <label style="display:flex;gap:10px;align-items:center;font-weight:700;color:var(--text);">
+          <input type="checkbox" name="{{ field.name }}" value="1" {% if field.checked %}checked{% endif %}>
+          {{ field.label }}
+        </label>
+        {% else %}
+        <label style="display:block;font-size:0.78rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">
+          {{ field.label }}
+        </label>
+        {% if field.type == 'textarea' %}
+        <textarea name="{{ field.name }}" rows="{{ field.rows or 4 }}"
+                  style="width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;">{{ field.value or '' }}</textarea>
+        {% elif field.type == 'select' %}
+        <select name="{{ field.name }}" style="width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:white;">
+          {% for option in field.options %}
+          <option value="{{ option.value }}" {% if option.value|string == field.value|string %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        {% elif field.type == 'multiselect' %}
+        <select name="{{ field.name }}" multiple size="6" style="width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:white;">
+          {% for option in field.options %}
+          <option value="{{ option.value }}" {% if option.value in field.selected_values %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:5px;">Giu Ctrl de chon nhieu muc.</div>
+        {% else %}
+        <input type="{{ field.type or 'text' }}" name="{{ field.name }}" value="{{ field.value or '' }}"
+               {% if field.step %}step="{{ field.step }}"{% endif %}
+               style="width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;">
+        {% endif %}
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
+      <a href="{{ back_url }}" class="adm-btn adm-btn-ghost">Huy</a>
+      <button type="submit" class="adm-btn adm-btn-primary">{{ submit_label }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
