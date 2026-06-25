@@ -213,25 +213,25 @@
       <span class="icon">🎫</span><span class="txt">Support Tickets</span>
       {% if open_ticket_count %}<span class="adm-badge">{{ open_ticket_count }}</span>{% endif %}
     </a>
-    <a href="/admin/order/list/" class="adm-nav-item">
+    <a href="{{ request.url_for('admin_orders') }}" class="adm-nav-item {% if active_page == 'orders' %}active{% endif %}">
       <span class="icon">🛒</span><span class="txt">Đơn hàng</span>
     </a>
-    <a href="/admin/product/list/" class="adm-nav-item">
+    <a href="{{ request.url_for('admin_products') }}" class="adm-nav-item {% if active_page == 'products' %}active{% endif %}">
       <span class="icon">📦</span><span class="txt">Sản phẩm</span>
     </a>
-    <a href="/admin/user/list/" class="adm-nav-item">
+    <a href="{{ request.url_for('admin_users') }}" class="adm-nav-item {% if active_page == 'users' %}active{% endif %}">
       <span class="icon">👥</span><span class="txt">Người dùng</span>
     </a>
-    <a href="/admin/category/list/" class="adm-nav-item">
+    <a href="{{ request.url_for('admin_categories') }}" class="adm-nav-item {% if active_page == 'categories' %}active{% endif %}">
       <span class="icon">🏷️</span><span class="txt">Danh mục</span>
     </a>
-    <a href="/admin/invoice/list/" class="adm-nav-item">
+    <a href="{{ request.url_for('admin_invoices') }}" class="adm-nav-item {% if active_page == 'invoices' %}active{% endif %}">
       <span class="icon">🧾</span><span class="txt">Hóa đơn</span>
     </a>
 
     <div class="adm-nav-label">Hệ thống</div>
-    <a href="/admin/" class="adm-nav-item" target="_blank">
-      <span class="icon">⚙️</span><span class="txt">SQLAdmin (đầy đủ)</span>
+    <a href="{{ request.url_for('admin_dashboard') }}" class="adm-nav-item">
+      <span class="icon">⚙️</span><span class="txt">Tổng quan quản trị</span>
     </a>
     <a href="{{ request.url_for('home') }}" class="adm-nav-item">
       <span class="icon">🏠</span><span class="txt">Về trang chủ</span>

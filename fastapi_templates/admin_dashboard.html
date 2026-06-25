@@ -55,7 +55,7 @@
     <div class="adm-card h-100">
       <div class="adm-card-header">
         <span class="adm-card-title">📋 Trạng thái đơn hàng</span>
-        <a href="/admin/order/list/" class="adm-btn adm-btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Xem tất cả</a>
+        <a href="{{ request.url_for('admin_orders') }}" class="adm-btn adm-btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Xem tất cả</a>
       </div>
       <div class="adm-card-body">
         <div style="display:flex;flex-direction:column;gap:10px;">
@@ -128,7 +128,7 @@
     <div class="adm-card">
       <div class="adm-card-header">
         <span class="adm-card-title">🛒 Đơn hàng gần đây</span>
-        <a href="/admin/order/list/" class="adm-btn adm-btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Xem tất cả</a>
+        <a href="{{ request.url_for('admin_orders') }}" class="adm-btn adm-btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Xem tất cả</a>
       </div>
       <div style="overflow-x:auto;">
         <table class="adm-table">

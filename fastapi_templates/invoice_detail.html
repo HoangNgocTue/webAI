@@ -52,7 +52,7 @@
           <div class="d-flex align-items-center gap-3 mb-3 pb-3" style="border-bottom:1px solid #f0f4f8;">
             <img src="{{ item.product.ImageURL }}" alt="{{ item.product.name }}"
                  style="width:52px;height:52px;object-fit:contain;border-radius:8px;border:1px solid var(--border);padding:4px;"
-                 onerror="this.style.display='none'">
+                 onerror="this.onerror=null;this.src='{{ request.url_for('static', path='app/images/product-placeholder.svg') }}'">
             <div style="flex:1;">
               <div style="font-weight:600;color:var(--text);font-size:0.9rem;">{{ item.product.name }}</div>
               <div style="font-size:0.82rem;color:var(--text-muted);">

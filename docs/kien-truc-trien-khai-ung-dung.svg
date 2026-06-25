@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #f4f7fb; }
+      .title { font: 800 34px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 18px Arial, sans-serif; fill: #64748b; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 18; }
+      .box-blue { fill: #e0f2fe; stroke: #0284c7; stroke-width: 2; rx: 18; }
+      .box-green { fill: #dcfce7; stroke: #16a34a; stroke-width: 2; rx: 18; }
+      .box-orange { fill: #ffedd5; stroke: #f97316; stroke-width: 2; rx: 18; }
+      .box-purple { fill: #f3e8ff; stroke: #9333ea; stroke-width: 2; rx: 18; }
+      .box-gray { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; rx: 18; }
+      .label { font: 800 22px Arial, sans-serif; fill: #0f172a; }
+      .text { font: 500 17px Arial, sans-serif; fill: #334155; }
+      .small { font: 500 15px Arial, sans-serif; fill: #475569; }
+      .mono { font: 600 15px Consolas, monospace; fill: #0f172a; }
+      .arrow { stroke: #0f172a; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+      .dash { stroke-dasharray: 9 7; }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#0f172a"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <text class="title" x="70" y="70">Kiến trúc triển khai ứng dụng Đà Nẵng Store</text>
+  <text class="subtitle" x="70" y="104">Triển khai bằng Docker Compose: FastAPI + PostgreSQL + volume lưu dữ liệu</text>
+
+  <rect class="box-blue" x="70" y="170" width="230" height="140"/>
+  <text class="label" x="105" y="215">Người dùng</text>
+  <text class="text" x="105" y="250">Trình duyệt web</text>
+  <text class="small" x="105" y="278">Khách hàng / Admin</text>
+
+  <rect class="box-gray" x="390" y="145" width="600" height="540"/>
+  <text class="label" x="430" y="190">Docker Host</text>
+  <text class="small" x="430" y="218">Máy local hoặc server chạy Docker Compose</text>
+
+  <rect class="box-orange" x="440" y="265" width="240" height="165"/>
+  <text class="label" x="470" y="308">Web container</text>
+  <text class="text" x="470" y="342">FastAPI + Uvicorn</text>
+  <text class="mono" x="470" y="374">0.0.0.0:8000</text>
+  <text class="small" x="470" y="404">Routers, templates, chatbot</text>
+
+  <rect class="box-green" x="710" y="265" width="230" height="165"/>
+  <text class="label" x="745" y="308">DB container</text>
+  <text class="text" x="745" y="342">PostgreSQL 16</text>
+  <text class="mono" x="745" y="374">db:5432</text>
+  <text class="small" x="745" y="404">danang_store</text>
+
+  <rect class="box" x="440" y="500" width="230" height="120"/>
+  <text class="label" x="470" y="542">static_images</text>
+  <text class="text" x="470" y="575">Volume ảnh sản phẩm</text>
+  <text class="mono" x="470" y="604">/app/static/images</text>
+
+  <rect class="box" x="710" y="500" width="230" height="120"/>
+  <text class="label" x="745" y="542">postgres_data</text>
+  <text class="text" x="745" y="575">Volume dữ liệu DB</text>
+  <text class="small" x="745" y="604">Giữ dữ liệu sau restart</text>
+
+  <rect class="box-purple" x="1070" y="195" width="250" height="150"/>
+  <text class="label" x="1105" y="238">AI Providers</text>
+  <text class="text" x="1105" y="272">Claude / ChatGPT</text>
+  <text class="text" x="1105" y="302">Groq fallback</text>
+
+  <rect class="box-purple" x="1070" y="415" width="250" height="150"/>
+  <text class="label" x="1105" y="458">Gmail SMTP</text>
+  <text class="text" x="1105" y="492">Gửi email ticket</text>
+  <text class="text" x="1105" y="522">Phản hồi khách hàng</text>
+
+  <rect class="box-gray" x="70" y="650" width="310" height="130"/>
+  <text class="label" x="105" y="694">Local fallback</text>
+  <text class="text" x="105" y="728">Nếu DATABASE_URL rỗng:</text>
+  <text class="mono" x="105" y="758">db.sqlite3</text>
+
+  <path class="arrow" d="M300 240 C345 240, 345 348, 440 348"/>
+  <text class="mono" x="315" y="230">HTTP :8000</text>
+
+  <path class="arrow" d="M680 348 L710 348"/>
+  <text class="mono" x="660" y="333">DATABASE_URL</text>
+
+  <path class="arrow" d="M560 430 L560 500"/>
+  <path class="arrow" d="M825 430 L825 500"/>
+
+  <path class="arrow dash" d="M680 300 C820 185, 920 250, 1070 265"/>
+  <text class="small" x="846" y="210">Chatbot API call</text>
+
+  <path class="arrow dash" d="M680 390 C840 445, 920 485, 1070 490"/>
+  <text class="small" x="835" y="470">Email ticket</text>
+
+  <path class="arrow dash" d="M225 650 C260 560, 345 520, 440 410"/>
+  <text class="small" x="90" y="630">Chạy local không Docker</text>
+
+  <rect class="box" x="70" y="820" width="1250" height="44"/>
+  <text class="small" x="98" y="848">Cổng truy cập: http://localhost:8000 | Quản trị: /quan-tri | Contact tạo ticket: /contact | Chatbot: /api/chatbot</text>
+</svg>

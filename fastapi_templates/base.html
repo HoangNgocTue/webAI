@@ -55,16 +55,10 @@
             padding: 15px 20px; font-size: 1.1rem; font-weight: 600;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .chat-header-actions { display: flex; align-items: center; gap: 6px; }
-        .chat-header button {
-            width: 32px; height: 32px; border: none; border-radius: 50%;
-            background: rgba(255,255,255,0.14); color: #fff;
-            display: inline-flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: background 0.2s ease, transform 0.2s ease;
-        }
-        .chat-header button:hover { background: rgba(255,255,255,0.24); transform: translateY(-1px); }
-        .chat-header .close-btn { font-size: 1.35rem; line-height: 1; }
-        .chat-header .reset-btn svg { width: 17px; height: 17px; fill: currentColor; }
+        .chat-header .close-btn,
+        .chat-header .reset-chat-btn { background: none; border: none; color: #fff; cursor: pointer; }
+        .chat-header .close-btn { font-size: 1.5rem; }
+        .chat-header .reset-chat-btn { font-size: 0.78rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.55); border-radius: 999px; padding: 4px 9px; }
         .chat-messages {
             flex-grow: 1; padding: 20px; overflow-y: auto;
             display: flex; flex-direction: column; gap: 15px; background: #f5f5f5;
@@ -153,7 +147,6 @@
                     <hr>
                     {% if current_user.is_staff or current_user.is_superuser %}
                     <a href="{{ request.url_for('admin_dashboard') }}" class="account-dropdown__item" style="color:#7c3aed;font-weight:600;">📊 Dashboard Admin</a>
-                    <a href="/admin/" class="account-dropdown__item" style="color:#0369a1;">⚙️ SQLAdmin Panel</a>
                     <hr>
                     {% endif %}
                     <a href="{{ request.url_for('profile') }}" class="account-dropdown__item">👤 Thông tin tài khoản</a>
@@ -241,15 +234,15 @@
 <!-- Chatbot widget -->
 <div class="chat-widget-container" id="chat-widget">
     <div class="chat-header">
+        <button class="reset-chat-btn" type="button" data-reset-chat title="Reset lịch sử" aria-label="Reset lịch sử">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="display:block;fill:currentColor;">
+                <path d="M17.7 6.3C16.2 4.9 14.2 4 12 4c-3.7 0-6.8 2.5-7.7 6H2l3.3 3.3L8.8 10H6.4C7.2 7.7 9.4 6 12 6c1.7 0 3.2.7 4.3 1.8L14 10h8V2l-4.3 4.3zM6.3 17.7C7.8 19.1 9.8 20 12 20c3.7 0 6.8-2.5 7.7-6H22l-3.3-3.3L15.2 14h2.4c-.8 2.3-3 4-5.6 4-1.7 0-3.2-.7-4.3-1.8L10 14H2v8l4.3-4.3z"></path>
+            </svg>
+        </button>
         <span>Đà Nẵng Store Assistant 🤖</span>
-        <div class="chat-header-actions">
-            <button class="reset-btn" id="reset-chat" title="Xóa lịch sử chat" aria-label="Xóa lịch sử chat">
-                <svg viewBox="0 0 24 24"><path d="M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.76-4.24L13 11h8V3z"></path></svg>
-            </button>
-            <button class="close-btn" id="close-chat" title="Đóng chat" aria-label="Đóng chat">×</button>
-        </div>
+        <button class="close-btn" id="close-chat">×</button>
     </div>
-    <div class="chat-messages" id="chatbox">
+    <div class="chat-messages" id="chatbox" data-chatbox>
         <div class="message bot">Xin chào! Tôi có thể giúp gì cho bạn?</div>
     </div>
     <div class="chat-input">
@@ -275,23 +268,25 @@
 <script src="{{ request.url_for('static', path='app/js/cart.js') }}"></script>
 
 <script>
+(() => {
     // Chatbot
     const chatLauncher = document.getElementById('chat-launcher');
     const chatWidget = document.getElementById('chat-widget');
-    const closeChatBtn = chatWidget.querySelector('#close-chat');
-    const resetChatBtn = chatWidget.querySelector('#reset-chat');
-    const chatbox = chatWidget.querySelector('#chatbox');
-    const messageInput = chatWidget.querySelector('#message-input');
-    const sendButton = chatWidget.querySelector('#send-button');
+    const closeChatBtn = document.getElementById('close-chat');
+    const widgetChatbox = chatWidget ? chatWidget.querySelector('[data-chatbox]') : null;
+    const messageInput = chatWidget ? chatWidget.querySelector('#message-input') : null;
+    const sendButton = chatWidget ? chatWidget.querySelector('#send-button') : null;
+    const resetChatBtn = chatWidget ? chatWidget.querySelector('[data-reset-chat]') : null;
 
-    chatLauncher.addEventListener('click', () => chatWidget.classList.toggle('show'));
-    closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
-    resetChatBtn.addEventListener('click', resetChatHistory);
-    sendButton.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
-    loadChatHistory();
+    if (chatLauncher && chatWidget) chatLauncher.addEventListener('click', () => chatWidget.classList.toggle('show'));
+    if (closeChatBtn && chatWidget) closeChatBtn.addEventListener('click', () => chatWidget.classList.remove('show'));
+    if (sendButton) sendButton.addEventListener('click', sendMessage);
+    if (messageInput) messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
+    if (resetChatBtn) resetChatBtn.addEventListener('click', () => resetChat(widgetChatbox));
 
-    function scrollToBottom() { chatbox.scrollTop = chatbox.scrollHeight; }
+    function scrollToBottom(targetChatbox = widgetChatbox) {
+        if (targetChatbox) targetChatbox.scrollTop = targetChatbox.scrollHeight;
+    }
 
     async function sendMessage() {
         const msg = messageInput.value.trim();
@@ -306,100 +301,26 @@
                 body: JSON.stringify({ message: msg })
             });
             const data = await res.json();
-            await appendMessage(data.reply, 'bot');
+            appendMessage(data.reply, 'bot');
         } catch (e) {
-            await appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
+            appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
         } finally {
             hideTypingIndicator();
         }
     }
 
-    function extractProductIds(message) {
-        const ids = [];
-        const markerRegex = /<!--\s*PRODUCT:(\d+)\s*-->/g;
-        let match;
-        while ((match = markerRegex.exec(message)) !== null) {
-            if (!ids.includes(match[1])) ids.push(match[1]);
-        }
-        return ids;
+    function appendMessage(message, type) {
+        appendMessageTo(window.currentChatboxOverride || widgetChatbox, message, type);
     }
 
-    async function renderProductCards(container, ids) {
-        if (!ids.length) return;
-        try {
-            const res = await fetch(`/api/chatbot/products/?ids=${encodeURIComponent(ids.join(','))}`);
-            const data = await res.json();
-            if (!data.products || !data.products.length) return;
-            const productMap = new Map(data.products.map((product) => [String(product.id), product]));
-            data.products.forEach((product) => {
-                const card = document.createElement('a');
-                card.href = product.url;
-                card.className = 'chat-product-card';
-                card.style.cssText = 'display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #dbe5ea;border-radius:8px;background:#fff;text-decoration:none;color:#111827;margin-top:8px;';
-                card.innerHTML = `
-                    <img src="${product.image || '/static/images/cart.png'}" alt="" style="width:54px;height:54px;object-fit:cover;border-radius:6px;background:#f3f4f6;">
-                    <span style="min-width:0;display:block;">
-                        <strong style="display:block;font-size:0.86rem;line-height:1.2;">${product.name}</strong>
-                        <span style="display:block;font-size:0.82rem;color:#4eaeb9;font-weight:700;margin-top:3px;">${product.price}</span>
-                    </span>
-                `;
-                const placeholder = container.querySelector(`.chat-product-preview[data-product-id="${product.id}"]`);
-                if (placeholder) {
-                    placeholder.replaceWith(card);
-                }
-            });
-            const missingIds = ids.filter((id) => !container.querySelector(`.chat-product-card[href$="id=${id}"]`) && productMap.has(String(id)));
-            if (missingIds.length) {
-                const cards = document.createElement('div');
-                cards.className = 'chat-product-cards';
-                cards.style.cssText = 'display:grid;gap:8px;margin-top:10px;';
-                missingIds.forEach((id) => {
-                    const product = productMap.get(String(id));
-                    const card = document.createElement('a');
-                    card.href = product.url;
-                    card.style.cssText = 'display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #dbe5ea;border-radius:8px;background:#fff;text-decoration:none;color:#111827;';
-                    card.innerHTML = `
-                        <img src="${product.image || '/static/images/cart.png'}" alt="" style="width:54px;height:54px;object-fit:cover;border-radius:6px;background:#f3f4f6;">
-                        <span style="min-width:0;display:block;">
-                            <strong style="display:block;font-size:0.86rem;line-height:1.2;">${product.name}</strong>
-                            <span style="display:block;font-size:0.82rem;color:#4eaeb9;font-weight:700;margin-top:3px;">${product.price}</span>
-                        </span>
-                    `;
-                    cards.appendChild(card);
-                });
-                container.appendChild(cards);
-            }
-        } catch (error) {
-            console.error('Product preview error:', error);
-        }
-    }
-
-    async function appendMessage(message, type) {
+    function appendMessageTo(targetChatbox, message, type) {
+        if (!targetChatbox) return;
         const el = document.createElement('div');
         el.classList.add('message', type);
-        const productIds = type === 'bot' ? extractProductIds(message) : [];
-        const cleanMessage = type === 'bot'
-            ? message.replace(/<!--\s*PRODUCT:(\d+)\s*-->/g, '<span class="chat-product-preview" data-product-id="$1"></span>')
-            : message;
-        el.innerHTML = type === 'bot' ? marked.parse(cleanMessage) : '';
+        el.innerHTML = type === 'bot' ? marked.parse(message) : '';
         if (type !== 'bot') el.textContent = message;
-        chatbox.appendChild(el);
-        if (type === 'bot') await renderProductCards(el, productIds);
-        scrollToBottom();
-    }
-
-    async function loadChatHistory() {
-        try {
-            const res = await fetch('/api/chatbot/history/');
-            const data = await res.json();
-            if (!data.messages || !data.messages.length) return;
-            chatbox.innerHTML = '';
-            for (const item of data.messages) {
-                await appendMessage(item.content, item.role === 'user' ? 'user' : 'bot');
-            }
-        } catch (error) {
-            console.error('Chat history load error:', error);
-        }
+        targetChatbox.appendChild(el);
+        scrollToBottom(targetChatbox);
     }
 
     function showTypingIndicator() {
@@ -407,28 +328,110 @@
         ind.id = 'typing-indicator';
         ind.classList.add('message', 'typing-indicator');
         ind.innerHTML = '<span></span><span></span><span></span>';
-        chatbox.appendChild(ind);
-        scrollToBottom();
+        if (!widgetChatbox) return;
+        widgetChatbox.appendChild(ind);
+        scrollToBottom(widgetChatbox);
     }
 
     function hideTypingIndicator() {
         const ind = document.getElementById('typing-indicator');
-        if (ind) chatbox.removeChild(ind);
+        if (ind && ind.parentElement) ind.parentElement.removeChild(ind);
     }
 
-    async function resetChatHistory() {
-        resetChatBtn.disabled = true;
+    function clearChatbox(targetChatbox) {
+        if (targetChatbox) targetChatbox.innerHTML = '';
+    }
+
+    async function loadChatHistory(targetChatbox = widgetChatbox, forceEmpty = false) {
+        if (!targetChatbox) return;
         try {
-            await fetch('/api/chatbot/clear/', { method: 'POST' });
-            chatbox.innerHTML = '<div class="message bot">Lịch sử chat đã được làm mới. Bạn muốn mình tư vấn sản phẩm nào?</div>';
-            messageInput.value = '';
-            scrollToBottom();
-        } catch (error) {
-            await appendMessage('Chưa reset được lịch sử chat. Bạn thử lại giúp mình nhé.', 'bot');
-        } finally {
-            resetChatBtn.disabled = false;
+            const res = await fetch('/api/chatbot/history/');
+            const data = await res.json();
+            if (!data.history || !data.history.length) {
+                if (forceEmpty) {
+                    clearChatbox(targetChatbox);
+                    appendMessageTo(targetChatbox, 'Chưa có lịch sử trò chuyện nào để tải lại.', 'bot');
+                }
+                return;
+            }
+            clearChatbox(targetChatbox);
+            data.history.forEach(item => appendMessageTo(targetChatbox, item.message, item.type));
+        } catch (e) {}
+    }
+
+    async function resetChat(targetChatbox = widgetChatbox) {
+        if (!targetChatbox) return;
+        try {
+            const res = await fetch('/api/chatbot/reset/', { method: 'POST' });
+            const data = await res.json();
+            clearChatbox(targetChatbox);
+            appendMessageTo(targetChatbox, data.reply || 'Đã xóa lịch sử trò chuyện.', 'bot');
+        } catch (e) {
+            appendMessageTo(targetChatbox, 'Không xóa được lịch sử chat. Bạn thử lại giúp mình nhé.', 'bot');
         }
     }
+
+    loadChatHistory(widgetChatbox);
+
+    async function handleChatCartAction(button) {
+        const action = button.dataset.chatAction;
+        const productId = button.dataset.productId;
+        const targetChatbox = button.closest('[data-chatbox]') || widgetChatbox;
+        window.currentChatboxOverride = targetChatbox;
+        const productName = button.dataset.productName || 'sản phẩm này';
+
+        if (!productId || !action) {
+            window.currentChatboxOverride = null;
+            return;
+        }
+        if (user === "AnonymousUser") {
+            appendMessage('Bạn cần <a href="/login/">đăng nhập</a> để thao tác giỏ hàng.', 'bot');
+            window.currentChatboxOverride = null;
+            return;
+        }
+        if (action === 'delete') {
+            const firstConfirm = confirm(`Bạn muốn xóa toàn bộ "${productName}" khỏi giỏ hàng?`);
+            if (!firstConfirm) {
+                window.currentChatboxOverride = null;
+                return;
+            }
+            const secondConfirm = confirm('Xác nhận lần 2: xóa sản phẩm này khỏi giỏ hàng?');
+            if (!secondConfirm) {
+                window.currentChatboxOverride = null;
+                return;
+            }
+        }
+
+        button.disabled = true;
+        try {
+            const res = await fetch('/api/chatbot/cart-action/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({ productId, action })
+            });
+            const data = await res.json();
+            appendMessage(data.reply || 'Đã cập nhật giỏ hàng.', 'bot');
+            if (typeof data.cart_items === 'number') {
+                updateHeaderCartCount(data.cart_items);
+            }
+        } catch (e) {
+            appendMessage('Không cập nhật được giỏ hàng. Bạn thử lại giúp mình nhé.', 'bot');
+        } finally {
+            button.disabled = false;
+            window.currentChatboxOverride = null;
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest('.chat-action-btn');
+        if (!button) return;
+        event.preventDefault();
+        handleChatCartAction(button);
+    });
+})();
 </script>
 {% block extra_js %}{% endblock %}
 </body>

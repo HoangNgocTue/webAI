@@ -22,7 +22,7 @@
       <div class="product-card__img-wrap">
         <a href="{{ request.url_for('detail') }}?id={{ product.id }}">
           <img src="{{ product.ImageURL }}" alt="{{ product.name }}" class="product-card__img"
-               onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+               onerror="this.onerror=null;this.src='{{ request.url_for('static', path='app/images/product-placeholder.svg') }}'">
         </a>
         {% if product.stock == 0 %}
         <span class="product-card__badge badge-out">Hết hàng</span>

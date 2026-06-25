@@ -11,7 +11,7 @@ Website thương mại điện tử bán đồ công nghệ, tích hợp AI Chat
 - Tự động phân loại lỗi và tạo ticket hỗ trợ
 - Khách hàng nhận email thông báo khi ticket được xử lý
 - Quản lý đơn hàng, giỏ hàng, thanh toán, hóa đơn
-- Trang quản trị hiện đại tại `/admin` (SQLAdmin — Bootstrap 5)
+- Trang quản trị riêng tại `/quan-tri` cho dashboard, đơn hàng, sản phẩm, người dùng, danh mục, hóa đơn và support ticket
 
 ---
 
@@ -84,7 +84,7 @@ python run_fastapi.py
 
 Truy cập: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-Admin: [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
+Quản trị: [http://127.0.0.1:8000/quan-tri](http://127.0.0.1:8000/quan-tri)
 
 ---
 
@@ -145,7 +145,7 @@ webAI/
 │   ├── models.py           # ORM models (User, Product, Order...)
 │   ├── auth.py             # Xác thực PBKDF2 (tương thích Django)
 │   ├── dependencies.py     # BaseContext (user, categories, cart)
-│   ├── admin_setup.py      # SQLAdmin panel
+│   ├── admin_setup.py      # Legacy SQLAdmin setup (không mount mặc định)
 │   ├── email_service.py    # Gửi email Gmail SMTP
 │   ├── chatbot_service.py  # Logic chatbot Claude AI
 │   └── routers/            # Các router theo tính năng
@@ -216,7 +216,7 @@ Nhấn icon chat ở góc dưới phải trang web để mở chatbot.
 
 ## Trang quản trị
 
-Truy cập: [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
+Truy cập: [http://127.0.0.1:8000/quan-tri](http://127.0.0.1:8000/quan-tri)
 
 Đăng nhập bằng tài khoản có quyền `is_staff = True`.
 

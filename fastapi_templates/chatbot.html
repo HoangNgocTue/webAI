@@ -5,16 +5,18 @@
   <div class="row justify-content-center">
     <div class="col-lg-8">
       <div class="bg-white rounded-4 shadow-sm overflow-hidden" style="border:1px solid var(--border);height:600px;display:flex;flex-direction:column;">
-        <div class="px-4 py-3" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div class="px-4 py-3" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;display:flex;justify-content:space-between;align-items:center;gap:12px;">
           <div>
-            <h5 style="margin:0;font-weight:700;">🤖 Dani — Trợ lý AI Đà Nẵng Store</h5>
-            <div style="font-size:0.82rem;opacity:0.85;margin-top:4px;">Hỗ trợ tư vấn sản phẩm và giải quyết vấn đề 24/7</div>
+          <h5 style="margin:0;font-weight:700;">🤖 Dani — Trợ lý AI Đà Nẵng Store</h5>
+          <div style="font-size:0.82rem;opacity:0.85;margin-top:4px;">Hỗ trợ tư vấn sản phẩm và giải quyết vấn đề 24/7</div>
           </div>
-          <button id="reset-chat-page" title="Xóa lịch sử chat" aria-label="Xóa lịch sử chat" style="width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,0.16);color:white;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.76-4.24L13 11h8V3z"></path></svg>
+          <button type="button" id="reset-chat-page" data-reset-chat title="Reset lịch sử" aria-label="Reset lịch sử" style="border:1px solid rgba(255,255,255,0.6);background:transparent;color:white;border-radius:999px;padding:6px 10px;font-weight:700;font-size:0.82rem;">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="display:block;fill:currentColor;">
+              <path d="M17.7 6.3C16.2 4.9 14.2 4 12 4c-3.7 0-6.8 2.5-7.7 6H2l3.3 3.3L8.8 10H6.4C7.2 7.7 9.4 6 12 6c1.7 0 3.2.7 4.3 1.8L14 10h8V2l-4.3 4.3zM6.3 17.7C7.8 19.1 9.8 20 12 20c3.7 0 6.8-2.5 7.7-6H22l-3.3-3.3L15.2 14h2.4c-.8 2.3-3 4-5.6 4-1.7 0-3.2-.7-4.3-1.8L10 14H2v8l4.3-4.3z"></path>
+            </svg>
           </button>
         </div>
-        <div id="chatbox" style="flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:15px;background:#f5f5f5;">
+        <div id="chatbox" data-chatbox style="flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:15px;background:#f5f5f5;">
           <div class="message bot">Xin chào! Tôi là Dani, trợ lý AI của Đà Nẵng Store. Tôi có thể giúp bạn tư vấn sản phẩm, giải đáp thắc mắc về đơn hàng hoặc hỗ trợ kỹ thuật. Bạn cần giúp gì hôm nay?</div>
         </div>
         <div style="display:flex;padding:15px;border-top:1px solid var(--border);">
@@ -33,23 +35,52 @@
 
 {% block extra_js %}
 <script>
-(() => {
 // Override chatbot to use full-page interface
 const chatbox = document.getElementById('chatbox');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
-const resetChatButton = document.getElementById('reset-chat-page');
+const resetChatPageButton = document.getElementById('reset-chat-page');
 
 // Hide floating chatbot on this page
 document.getElementById('chat-launcher').style.display = 'none';
 document.getElementById('chat-widget').style.display = 'none';
 
 sendButton.addEventListener('click', sendMessage);
-resetChatButton.addEventListener('click', resetChatHistory);
 messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
-loadChatHistory();
+if (resetChatPageButton) resetChatPageButton.addEventListener('click', resetChat);
 
 function scrollToBottom() { chatbox.scrollTop = chatbox.scrollHeight; }
+
+function clearChatbox() { chatbox.innerHTML = ''; }
+
+async function loadChatHistory(forceEmpty = false) {
+    try {
+        const res = await fetch('/api/chatbot/history/');
+        const data = await res.json();
+        if (!data.history || !data.history.length) {
+            if (forceEmpty) {
+                clearChatbox();
+                appendMessage('Chưa có lịch sử trò chuyện nào để tải lại.', 'bot');
+            }
+            return;
+        }
+        clearChatbox();
+        data.history.forEach(item => appendMessage(item.message, item.type));
+    } catch (e) {}
+}
+
+loadChatHistory();
+
+async function resetChat() {
+    try {
+        const res = await fetch('/api/chatbot/reset/', { method: 'POST' });
+        const data = await res.json();
+        clearChatbox();
+        appendMessage(data.reply || 'Đã xóa lịch sử trò chuyện.', 'bot');
+    } catch (e) {
+        appendMessage('Không xóa được lịch sử chat. Bạn thử lại giúp mình nhé.', 'bot');
+    }
+}
 
 async function sendMessage() {
     const msg = messageInput.value.trim();
@@ -64,99 +95,21 @@ async function sendMessage() {
             body: JSON.stringify({ message: msg })
         });
         const data = await res.json();
-        await appendMessage(data.reply, 'bot');
+        appendMessage(data.reply, 'bot');
     } catch (e) {
-        await appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
+        appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', 'bot');
     } finally {
         hideTypingIndicator();
     }
 }
 
-function extractProductIds(message) {
-    const ids = [];
-    const markerRegex = /<!--\s*PRODUCT:(\d+)\s*-->/g;
-    let match;
-    while ((match = markerRegex.exec(message)) !== null) {
-        if (!ids.includes(match[1])) ids.push(match[1]);
-    }
-    return ids;
-}
-
-async function renderProductCards(container, ids) {
-    if (!ids.length) return;
-    try {
-        const res = await fetch(`/api/chatbot/products/?ids=${encodeURIComponent(ids.join(','))}`);
-        const data = await res.json();
-        if (!data.products || !data.products.length) return;
-        const productMap = new Map(data.products.map((product) => [String(product.id), product]));
-        data.products.forEach((product) => {
-            const card = document.createElement('a');
-            card.href = product.url;
-            card.className = 'chat-product-card';
-            card.style.cssText = 'display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;text-decoration:none;color:#111827;margin-top:10px;';
-            card.innerHTML = `
-                <img src="${product.image || '/static/images/cart.png'}" alt="" style="width:58px;height:58px;object-fit:cover;border-radius:6px;background:#f3f4f6;">
-                <span style="min-width:0;display:block;">
-                    <strong style="display:block;font-size:0.9rem;line-height:1.2;">${product.name}</strong>
-                    <span style="display:block;font-size:0.84rem;color:var(--primary);font-weight:700;margin-top:4px;">${product.price}</span>
-                </span>
-            `;
-            const placeholder = container.querySelector(`.chat-product-preview[data-product-id="${product.id}"]`);
-            if (placeholder) {
-                placeholder.replaceWith(card);
-            }
-        });
-        const missingIds = ids.filter((id) => !container.querySelector(`.chat-product-card[href$="id=${id}"]`) && productMap.has(String(id)));
-        if (missingIds.length) {
-            const cards = document.createElement('div');
-            cards.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px;';
-            missingIds.forEach((id) => {
-                const product = productMap.get(String(id));
-                const card = document.createElement('a');
-                card.href = product.url;
-                card.style.cssText = 'display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;text-decoration:none;color:#111827;';
-                card.innerHTML = `
-                    <img src="${product.image || '/static/images/cart.png'}" alt="" style="width:58px;height:58px;object-fit:cover;border-radius:6px;background:#f3f4f6;">
-                    <span style="min-width:0;display:block;">
-                        <strong style="display:block;font-size:0.9rem;line-height:1.2;">${product.name}</strong>
-                        <span style="display:block;font-size:0.84rem;color:var(--primary);font-weight:700;margin-top:4px;">${product.price}</span>
-                    </span>
-                `;
-                cards.appendChild(card);
-            });
-            container.appendChild(cards);
-        }
-    } catch (error) {
-        console.error('Product preview error:', error);
-    }
-}
-
-async function appendMessage(message, type) {
+function appendMessage(message, type) {
     const el = document.createElement('div');
     el.classList.add('message', type);
-    const productIds = type === 'bot' ? extractProductIds(message) : [];
-    const cleanMessage = type === 'bot'
-        ? message.replace(/<!--\s*PRODUCT:(\d+)\s*-->/g, '<span class="chat-product-preview" data-product-id="$1"></span>')
-        : message;
-    if (type === 'bot') el.innerHTML = marked.parse(cleanMessage);
+    if (type === 'bot') el.innerHTML = marked.parse(message);
     else el.textContent = message;
     chatbox.appendChild(el);
-    if (type === 'bot') await renderProductCards(el, productIds);
     scrollToBottom();
-}
-
-async function loadChatHistory() {
-    try {
-        const res = await fetch('/api/chatbot/history/');
-        const data = await res.json();
-        if (!data.messages || !data.messages.length) return;
-        chatbox.innerHTML = '';
-        for (const item of data.messages) {
-            await appendMessage(item.content, item.role === 'user' ? 'user' : 'bot');
-        }
-    } catch (error) {
-        console.error('Chat history load error:', error);
-    }
 }
 
 function showTypingIndicator() {
@@ -172,21 +125,6 @@ function hideTypingIndicator() {
     const ind = document.getElementById('typing-indicator');
     if (ind) chatbox.removeChild(ind);
 }
-
-async function resetChatHistory() {
-    resetChatButton.disabled = true;
-    try {
-        await fetch('/api/chatbot/clear/', { method: 'POST' });
-        chatbox.innerHTML = '<div class="message bot">Lịch sử chat đã được làm mới. Bạn muốn mình tư vấn sản phẩm nào?</div>';
-        messageInput.value = '';
-        scrollToBottom();
-    } catch (error) {
-        await appendMessage('Chưa reset được lịch sử chat. Bạn thử lại giúp mình nhé.', 'bot');
-    } finally {
-        resetChatButton.disabled = false;
-    }
-}
-})();
 </script>
 {% endblock %}
 {% endblock %}
