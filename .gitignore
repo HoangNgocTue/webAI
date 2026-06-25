@@ -21,5 +21,6 @@ media/
 staticfiles/
 
 # Documentation & Reports
+docs/
 baitap/
 db_info.txt
