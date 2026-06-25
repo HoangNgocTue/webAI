@@ -7,7 +7,12 @@
 <div class="adm-card">
   <div class="adm-card-header">
     <h2 class="adm-card-title">{{ icon }} {{ title }}</h2>
-    <a href="{{ request.url_for('admin_dashboard') }}" class="adm-btn adm-btn-ghost" style="padding:6px 12px;font-size:0.8rem;">← Dashboard</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      {% if create_url %}
+      <a href="{{ create_url }}" class="adm-btn adm-btn-primary" style="padding:6px 12px;font-size:0.8rem;">+ Them moi</a>
+      {% endif %}
+      <a href="{{ request.url_for('admin_dashboard') }}" class="adm-btn adm-btn-ghost" style="padding:6px 12px;font-size:0.8rem;">Dashboard</a>
+    </div>
   </div>
   <div style="overflow-x:auto;">
     <table class="adm-table">
@@ -22,12 +27,12 @@
         {% for row in rows %}
         <tr>
           {% for cell in row %}
-          <td>{{ cell }}</td>
+          <td>{% if loop.last and create_url %}{{ cell|safe }}{% else %}{{ cell }}{% endif %}</td>
           {% endfor %}
         </tr>
         {% else %}
         <tr>
-          <td colspan="{{ columns|length }}" style="text-align:center;padding:28px;color:var(--text-muted);">Chưa có dữ liệu.</td>
+          <td colspan="{{ columns|length }}" style="text-align:center;padding:28px;color:var(--text-muted);">Chua co du lieu.</td>
         </tr>
         {% endfor %}
       </tbody>
