@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from .database import Base, engine
+from . import models  # noqa: F401 - registers models for create_all
+from .db_migrations import run_startup_migrations
 from .routers import shop, auth_router, cart_router, orders_router, profile_router, pages_router, chatbot_router, support_router, admin_router
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,6 +33,12 @@ app.add_middleware(
 STATIC_DIR = BASE_DIR / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/images", StaticFiles(directory=str(STATIC_DIR / "images")), name="images")
+
+
+@app.on_event("startup")
+async def ensure_database_schema():
+    Base.metadata.create_all(bind=engine)
+    run_startup_migrations(engine)
 
 app.include_router(shop.router)
 app.include_router(auth_router.router)
